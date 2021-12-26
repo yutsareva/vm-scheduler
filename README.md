@@ -35,6 +35,9 @@
 - Allocates new VMs
 - Deallocated idle VMs
 
+### Allocated instances storage
+- Stores info about allocated instances
+
 ### Task Launcher
 - Launches tasks
 

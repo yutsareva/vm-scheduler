@@ -1,3 +1,3 @@
 project(vm_scheduler_infra)
 
-add_subdirectory(aws_allocator)
+add_subdirectory(allocator/aws_allocator)
