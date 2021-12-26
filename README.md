@@ -21,7 +21,7 @@
 ### Allocated VM storage
 - Stores data about allocated and deallocated VMs
 
-### Binaries storage
+### Binary storage
 - Stores task binaries
 
 ### Output storage
@@ -35,7 +35,7 @@
 - Allocates new VMs
 - Deallocated idle VMs
 
-### Tasks Launcher
+### Task Launcher
 - Launches tasks
 
 ### Fail detector
@@ -54,9 +54,10 @@
 - Get profile info/stats
 
 
-## Code rules
+## Code (-design/-style) rules
 - No exceptions are expected to catch, Result<error, value> should be used otherwise
 - Strong types should be used for primitive types
 - Clean architecture - any usage of db/storage/another service should be an interface
+- Use namespaces
 
 
