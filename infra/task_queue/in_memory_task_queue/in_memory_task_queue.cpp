@@ -2,14 +2,14 @@
 
 namespace vm_scheduler::queue {
 
-void InMemoryTaskQueue::add(task::Task&& task) override
+void InMemoryTaskQueue::add(task::Task&& task)
 {
-    queue_.push_back(std::move(task));
+//    queue_.emplace(std::move(task));
 }
 
-TaskInfos InMemoryTaskQueue::get(const task::VmSpace& vmSpace) override
+TaskInfos InMemoryTaskQueue::get(const task::VmSpace& vmSpace)
 {
-
+    return TaskInfos();
 }
 
 } // namespace vm_scheduler::queue

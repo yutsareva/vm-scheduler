@@ -1,5 +1,7 @@
 #pragma once
 
+#include "task_info.h"
+
 #include "lib/task/task.h"
 #include "lib/task/vm_space.h"
 
