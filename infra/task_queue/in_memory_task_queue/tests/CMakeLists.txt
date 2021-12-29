@@ -4,8 +4,8 @@ get_filename_component(LIB_PATH "." ABSOLUTE)
 file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
 file(GLOB_RECURSE LIB_HEADERS ${LIB_PATH}/*.h)
 
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-#find_package(Boost COMPONENTS system filesystem unit_test_framework REQUIRED)
+#find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system filesystem unit_test_framework REQUIRED)
 
 #set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 #set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
