@@ -17,22 +17,32 @@ apt-get update
 # TODO: remove unnecessary
 apt-get install -y \
 	cmake \
-	ninja-build \
 	ssh \
-	git \
 	clang-12 \
+	curl \
+	git \
+	zip \
+	unzip \
+	tar \
+	pkg-config \
 	clang-format-12 \
 	clang-tidy-12 \
 	lldb-12 \
 	python3 \
 	python3-pip \
 	python3-venv \
-	ca-certificates \
-	openssh-server \
 	rsync \
 	vim \
 	gdb \
+	ca-certificates \
+	openssh-server \
+	ninja-build \
 	autoconf \
 	iputils-ping \
 	binutils-dev \
 	libboost-all-dev
+
+git clone https://github.com/microsoft/vcpkg
+./vcpkg/bootstrap-vcpkg.sh
+./vcpkg/vcpkg install "aws-sdk-cpp[ec2]" --recurse
+
