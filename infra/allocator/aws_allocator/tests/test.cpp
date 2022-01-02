@@ -5,8 +5,6 @@
 
 BOOST_AUTO_TEST_CASE(Test5)
 {
-    AwsAllocator a;
-
     BOOST_CHECK_EQUAL(5, 1 + 4);
 }
 
