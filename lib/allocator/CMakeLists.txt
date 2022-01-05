@@ -5,3 +5,4 @@ file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
 file(GLOB_RECURSE LIB_HEADERS ${LIB_PATH}/*.h)
 
 add_library(allocator STATIC ${LIB_CXX_SOURCES} ${LIB_HEADERS})
+target_include_directories(allocator PUBLIC ${LIB_INCLUDE_PATH})
