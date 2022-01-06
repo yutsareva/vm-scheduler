@@ -2,8 +2,10 @@
 
 #include <string>
 
+namespace vm_scheduler {
 
-template <typename ...P> std::string toString(const P &... params)
+template<typename... P>
+std::string toString(const P&... params)
 {
     std::stringstream stream;
 
@@ -11,3 +13,5 @@ template <typename ...P> std::string toString(const P &... params)
 
     return stream.str();
 }
+
+} // namespace vm_scheduler

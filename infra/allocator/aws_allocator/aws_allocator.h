@@ -24,7 +24,6 @@ private:
     Result<void> deallocate(const AwsInstanceInfo& instanceInfo);
     Result<AwsInstanceInfo> createInstance(const Aws::EC2::Model::InstanceType& instanceType);
     Result<void> startInstance(const AwsInstanceInfo& instanceInfo);
-    Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const Slot& slot);
 private:
     Aws::EC2::EC2Client client_;
     AwsEc2Config config_;

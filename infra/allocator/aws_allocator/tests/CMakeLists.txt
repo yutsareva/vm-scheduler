@@ -1,7 +1,8 @@
 get_filename_component(LIB_PATH "." ABSOLUTE)
+get_filename_component(LIB_INCLUDE_PATH "../../../.." ABSOLUTE)
 
-file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
-file(GLOB_RECURSE LIB_HEADERS ${LIB_PATH}/*.h)
+file(GLOB LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
+file(GLOB LIB_HEADERS ${LIB_PATH}/*.h)
 
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
@@ -10,5 +11,5 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
 add_executable(test_aws_allocator ${LIB_CXX_SOURCES} ${LIB_HEADERS})
 
-target_link_libraries(test_aws_allocator ${Boost_LIBRARIES})
-target_link_libraries(test_aws_allocator aws_allocator)
+target_link_libraries(test_aws_allocator ${Boost_LIBRARIES} aws_allocator)
+target_include_directories(test_aws_allocator PUBLIC ${LIB_INCLUDE_PATH})

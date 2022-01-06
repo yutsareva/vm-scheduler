@@ -1,12 +1,12 @@
 #pragma once
 
-#include <cstddef>
+#include <lib/common/types.h>
 
 namespace vm_scheduler::allocator {
 
-class Slot {
-    size_t cpu;
-    size_t memory;
+struct Slot {
+    CpuCores cpu;
+    GigaBytes memory;
 };
 
 } // namespace vm_scheduler::allocator

@@ -4,13 +4,13 @@
 
 #include <aws/ec2/model/RunInstancesRequest.h>
 #include <aws/ec2/model/StartInstancesRequest.h>
-#include <aws/ec2/model/StopInstancesRequest.h>
+#include <aws/ec2/model/TerminateInstancesRequest.h>
 
 namespace vm_scheduler::allocator {
 
 namespace {
 
-InstanceInfo convertAwsVmInfoToVmInfo(const AwsInstanceInfo awsVmInfo)
+InstanceInfo convertAwsVmInfoToVmInfo(const AwsInstanceInfo& awsVmInfo)
 {
     return {
         .type = Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(awsVmInfo.type),
@@ -18,7 +18,7 @@ InstanceInfo convertAwsVmInfoToVmInfo(const AwsInstanceInfo awsVmInfo)
     };
 }
 
-AwsInstanceInfo convertVmInfoToAwsVmInfo(const InstanceInfo vmInfo)
+AwsInstanceInfo convertVmInfoToAwsVmInfo(const InstanceInfo& vmInfo)
 {
     return {
         .type = Aws::EC2::Model::InstanceTypeMapper::GetInstanceTypeForName(vmInfo.type),
@@ -26,11 +26,17 @@ AwsInstanceInfo convertVmInfoToAwsVmInfo(const InstanceInfo vmInfo)
     };
 }
 
+Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const Slot&)
+{
+    // TODO: implement
+    return Aws::EC2::Model::InstanceType::t1_micro;
+}
+
 } // anonymous namespace
 
 Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceType& instanceType)
 {
-    const auto instanceInfo = createInstance(instanceType);
+    auto instanceInfo = createInstance(instanceType);
     if (instanceInfo.IsFailure()) {
         return instanceInfo;
     }
@@ -43,16 +49,16 @@ Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceTy
 
 Result<void> AwsAllocator::deallocate(const AwsInstanceInfo& awsVmInfo)
 {
-    Aws::EC2::Model::StopInstancesRequest request;
+    Aws::EC2::Model::TerminateInstancesRequest request;
     request.AddInstanceIds(awsVmInfo.id);
 
-    const auto result = client_.StopInstances(request);
+    const auto result = client_.TerminateInstances(request);
     if (result.IsSuccess()) {
         return Result<void>::Success();
     }
     const auto instanceTypeName =  Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(awsVmInfo.type);
     return Result<void>::Failure(toString(
-        "Failed to stop ec2 instance ", instanceTypeName,
+        "Failed to terminate ec2 instance ", instanceTypeName,
         " based on ami ", config_.amiId, ":",
         result.GetError().GetMessage()));
 }
@@ -70,12 +76,6 @@ Result<void> AwsAllocator::deallocate(const InstanceInfo& instanceInfo)
 {
     const auto awsInstanceInfo = convertVmInfoToAwsVmInfo(instanceInfo);
     return deallocate(awsInstanceInfo);
-}
-
-Aws::EC2::Model::InstanceType AwsAllocator::getInstanceTypeBySlot(const Slot&)
-{
-    // TODO: implement
-    return Aws::EC2::Model::InstanceType::t1_micro;
 }
 
 Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::InstanceType& instanceType)
@@ -97,7 +97,7 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
     }
 
     const auto& instances = result.GetResult().GetInstances();
-    if (instances.size() == 0) {
+    if (instances.empty()) {
         return Result<AwsInstanceInfo>::Failure(toString(
             "Failed to start ec2 instance ", instanceTypeName,
             " based on ami ", config_.amiId, ":",

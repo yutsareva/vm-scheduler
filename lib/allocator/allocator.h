@@ -2,7 +2,7 @@
 
 #include "slot.h"
 
-#include <common/result.h>
+#include <lib/common/result.h>
 
 #include <string>
 
