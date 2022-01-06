@@ -1,4 +1,6 @@
-#include "aws_allocator.h"
+#include "allocator.h"
+#include "client.h"
+#include "config.h"
 
 #include <lib/common/stringify.h>
 
@@ -33,6 +35,12 @@ Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const Slot&)
 }
 
 } // anonymous namespace
+
+AwsAllocator::AwsAllocator()
+    : client_(createEc2Client())
+    , config_(createEc2Config())
+{
+}
 
 Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceType& instanceType)
 {
@@ -128,4 +136,4 @@ Result<void> AwsAllocator::startInstance(const AwsInstanceInfo& instanceInfo)
         ": ", result.GetError().GetMessage()));
 }
 
-} // namespace vm_scheduler::allocator
+} // namespace vm_scheduler::aws

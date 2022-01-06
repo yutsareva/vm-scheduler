@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aws_ec2_config.h"
+#include "config.h"
 
 #include <lib/allocator/allocator.h>
 #include <lib/common/result.h>  // TODO: remove
@@ -17,6 +17,7 @@ struct AwsInstanceInfo {
 
 class AwsAllocator : public VmAllocator {
 public:
+    AwsAllocator();
     Result<InstanceInfo> allocate(const Slot& slot) override;
     Result<void> deallocate(const InstanceInfo& instanceInfo) override;
 private:
@@ -29,4 +30,4 @@ private:
     AwsEc2Config config_;
 };
 
-} // namespace vm_scheduler::allocator
+} // namespace vm_scheduler::aws

@@ -1,4 +1,4 @@
-#include "infra/allocator/aws_allocator/aws_allocator.h"
+#include "infra/aws/ec2/allocator.h"
 
 #include <lib/common/types.h>
 //#define BOOST_TEST_MAIN
@@ -19,6 +19,4 @@ BOOST_AUTO_TEST_CASE(TestAllocateDeallocateAwsInstance)
     BOOST_CHECK(allocated.IsSuccess());
     const auto deallocated = allocator.deallocate(allocated.ValueRefOrThrow());
     BOOST_CHECK(deallocated.IsSuccess());
-
 }
-

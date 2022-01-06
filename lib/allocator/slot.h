@@ -9,4 +9,4 @@ struct Slot {
     GigaBytes memory;
 };
 
-} // namespace vm_scheduler::allocator
+} // namespace vm_scheduler::aws

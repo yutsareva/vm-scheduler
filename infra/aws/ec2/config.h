@@ -10,4 +10,7 @@ struct AwsEc2Config {
     std::vector<Aws::EC2::Model::InstanceType> instanceTypes;
 };
 
-} // namespace vm_scheduler::allocator
+AwsEc2Config createEc2Config();
+
+} // namespace vm_scheduler::aws
+

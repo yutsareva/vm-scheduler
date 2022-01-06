@@ -21,4 +21,4 @@ class VmAllocator {
     virtual Result<void> deallocate(const InstanceInfo& instanceInfo) = 0;
 };
 
-} // namespace vm_scheduler::allocator
+} // namespace vm_scheduler::aws
