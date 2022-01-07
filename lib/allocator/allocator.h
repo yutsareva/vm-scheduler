@@ -14,6 +14,8 @@ using InstanceId = std::string;
 struct InstanceInfo {
     InstanceType type;
     InstanceId id;
+    // AllocatorType: aws, azure
+    // InstanceState: created, started, stopped, terminated
 };
 
 class VmAllocator {

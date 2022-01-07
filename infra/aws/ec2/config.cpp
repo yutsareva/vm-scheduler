@@ -2,7 +2,6 @@
 
 #include <lib/common/env.h>
 
-
 namespace vm_scheduler::allocator {
 
 AwsEc2Config createEc2Config()
@@ -13,4 +12,4 @@ AwsEc2Config createEc2Config()
     };
 }
 
-} // namespace vm_scheduler::aws
+} // namespace vm_scheduler::allocator

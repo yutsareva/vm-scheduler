@@ -24,6 +24,26 @@ public:
         return {std::move(error)};
     }
 
+    template<typename TException>
+    static Result Failure(const std::string& errorString)
+    {
+        return {std::make_exception_ptr(TException(errorString))};
+    }
+
+    template<typename TException>
+    static Result Failure(const std::string& errorString, std::exception_ptr nestedError)
+    {
+        try {
+            throw(TException(errorString));
+        } catch (const TException& outerError) {
+            try {
+                std::throw_with_nested(nestedError);
+            } catch (const std::exception&) {
+                return Failure(std::current_exception());
+            }
+        }
+    }
+
     static Result Failure(const std::string& errorString)
     {
         return {std::make_exception_ptr(std::runtime_error(errorString))};
@@ -84,9 +104,10 @@ public:
         return {std::move(error)};
     }
 
+    template<typename TException>
     static Result Failure(const std::string& errorString)
     {
-        return {std::make_exception_ptr(std::runtime_error(errorString))};
+        return {std::make_exception_ptr(TException(errorString))};
     }
 
     bool IsFailure() const
@@ -97,6 +118,13 @@ public:
     bool IsSuccess() const
     {
         return !IsFailure();
+    }
+    std::exception_ptr&& ErrorOrThrow() &&
+    {
+        if (IsFailure()) {
+            return std::move(error_).value();
+        }
+        throw std::runtime_error("tried to extract error from Result with value");
     }
 private:
     Result() = default;

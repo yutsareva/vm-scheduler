@@ -12,5 +12,4 @@ struct AwsEc2Config {
 
 AwsEc2Config createEc2Config();
 
-} // namespace vm_scheduler::aws
-
+} // namespace vm_scheduler::allocator

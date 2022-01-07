@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <lib/common/stringify.h>
+#include <lib/common/errors.h>
 
 #include <aws/ec2/model/RunInstancesRequest.h>
 #include <aws/ec2/model/StartInstancesRequest.h>
@@ -50,7 +51,16 @@ Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceTy
     }
     const auto startInstanceResult = startInstance(instanceInfo.ValueRefOrThrow());
     if (startInstanceResult.IsFailure()) {
-        // TODO: deallocate
+        std::cerr << "Failed to start instance `" << instanceInfo.ValueRefOrThrow().id << "`, deallocating..." << std::endl;
+        auto deallocateResult = deallocate(instanceInfo.ValueRefOrThrow());
+        if (deallocateResult.IsFailure()) {
+            return Result<AwsInstanceInfo>::Failure<AllocationException>(
+                "Allocation failed: instance start failed, instance deallocation failed",
+                std::move(deallocateResult).ErrorOrThrow());
+        }
+        return Result<AwsInstanceInfo>::Failure<AllocationException>(
+            "Allocation failed: instance start failed, while instance successfully deallocated",
+            std::move(deallocateResult).ErrorOrThrow());
     }
     return instanceInfo;
 }
@@ -65,7 +75,7 @@ Result<void> AwsAllocator::deallocate(const AwsInstanceInfo& awsVmInfo)
         return Result<void>::Success();
     }
     const auto instanceTypeName =  Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(awsVmInfo.type);
-    return Result<void>::Failure(toString(
+    return Result<void>::Failure<AllocationException>(toString(
         "Failed to terminate ec2 instance ", instanceTypeName,
         " based on ami ", config_.amiId, ":",
         result.GetError().GetMessage()));
@@ -98,7 +108,7 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
 
     auto result = client_.RunInstances(runRequest);
     if (!result.IsSuccess()) {
-        return Result<AwsInstanceInfo>::Failure(toString(
+        return Result<AwsInstanceInfo>::Failure<AllocationException>(toString(
             "Failed to start ec2 instance ", instanceTypeName,
             " based on ami ", config_.amiId, ":",
             result.GetError().GetMessage()));
@@ -106,7 +116,7 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
 
     const auto& instances = result.GetResult().GetInstances();
     if (instances.empty()) {
-        return Result<AwsInstanceInfo>::Failure(toString(
+        return Result<AwsInstanceInfo>::Failure<AllocationException>(toString(
             "Failed to start ec2 instance ", instanceTypeName,
             " based on ami ", config_.amiId, ":",
             result.GetError().GetMessage()));
@@ -131,7 +141,7 @@ Result<void> AwsAllocator::startInstance(const AwsInstanceInfo& instanceInfo)
     if (result.IsSuccess()) {
         return Result<void>::Success();
     }
-    return Result<void>::Failure(toString(
+    return Result<void>::Failure<AllocationException>(toString(
         "Failed to start instance: ", instanceInfo.id,
         ": ", result.GetError().GetMessage()));
 }
