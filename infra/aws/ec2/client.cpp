@@ -14,7 +14,7 @@ Aws::Auth::AWSCredentials getCredentials()
     const auto secretKey = getFromEnvOrThrow("AWS_EC2_SECRET_KEY");
     const auto sessionToken = "";
 
-    return {accessKeyId, secretKey, sessionToken};
+    return Aws::Auth::AWSCredentials{accessKeyId, secretKey, sessionToken};
 }
 
 } // anonymous namespace
@@ -22,7 +22,7 @@ Aws::Auth::AWSCredentials getCredentials()
 Aws::EC2::EC2Client createEc2Client()
 {
     const auto credentials = getCredentials();
-    return {credentials};
+    return Aws::EC2::EC2Client{credentials};
 }
 
 } // namespace vm_scheduler::allocator

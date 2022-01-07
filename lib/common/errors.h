@@ -4,12 +4,19 @@
 
 namespace vm_scheduler {
 
-class RuntimeException : std::runtime_error {
+class RuntimeException : public std::exception {
 public:
-    explicit RuntimeException(const std::string& errorMsg) : std::runtime_error(errorMsg) { }
+    explicit RuntimeException(std::string errorMsg) : errorMsg_(std::move(errorMsg)) { }
+    const char* what() const noexcept override
+    {
+        return errorMsg_.c_str();
+    }
+
+private:
+    std::string errorMsg_;
 };
 
-class AllocationException : RuntimeException {
+class AllocationException : public RuntimeException {
 public:
     explicit AllocationException(const std::string& errorMsg) : RuntimeException(errorMsg) { }
 };
