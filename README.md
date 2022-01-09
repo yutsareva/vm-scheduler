@@ -42,6 +42,8 @@
 - Monitors state of launched tasks, allocated instances. Finds failed tasks / failed instances
 
 
+<img src="./docs/vm_scheduler.drawio.svg?raw=true" width="800">
+
 ## API
 
 - Register client profile (provides credentials to allocate instances from their cloud account)
