@@ -14,7 +14,7 @@ namespace vm_scheduler::allocator {
 
 namespace {
 
-InstanceInfo convertAwsVmInfoToVmInfo(const AwsInstanceInfo& awsVmInfo)
+VmInfo convertAwsVmInfoToVmInfo(const AwsVmInfo& awsVmInfo)
 {
     return {
         .type = Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(awsVmInfo.type),
@@ -22,7 +22,7 @@ InstanceInfo convertAwsVmInfoToVmInfo(const AwsInstanceInfo& awsVmInfo)
     };
 }
 
-AwsInstanceInfo convertVmInfoToAwsVmInfo(const InstanceInfo& vmInfo)
+AwsVmInfo convertVmInfoToAwsVmInfo(const VmInfo& vmInfo)
 {
     return {
         .type = Aws::EC2::Model::InstanceTypeMapper::GetInstanceTypeForName(vmInfo.type),
@@ -52,7 +52,7 @@ AwsAllocator::AwsAllocator()
 {
 }
 
-Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceType& instanceType)
+Result<AwsVmInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceType& instanceType)
 {
     auto instanceInfo = createInstance(instanceType);
     if (instanceInfo.IsFailure()) {
@@ -63,18 +63,18 @@ Result<AwsInstanceInfo> AwsAllocator::allocate(const Aws::EC2::Model::InstanceTy
         ERROR() << "Failed to start instance " << instanceInfo.ValueRefOrThrow().id << ", deallocating..." << std::endl;
         auto deallocateResult = deallocate(instanceInfo.ValueRefOrThrow());
         if (deallocateResult.IsFailure()) {
-            return Result<AwsInstanceInfo>::Failure<AllocationException>(
+            return Result<AwsVmInfo>::Failure<AllocationException>(
                 "Allocation failed: instance start failed, instance deallocation failed",
                 std::move(deallocateResult).ErrorOrThrow());
         }
-        return Result<AwsInstanceInfo>::Failure<AllocationException>(
+        return Result<AwsVmInfo>::Failure<AllocationException>(
             "Allocation failed: instance start failed, while instance successfully deallocated",
             std::move(deallocateResult).ErrorOrThrow());
     }
     return instanceInfo;
 }
 
-Result<void> AwsAllocator::deallocate(const AwsInstanceInfo& awsVmInfo)
+Result<void> AwsAllocator::deallocate(const AwsVmInfo& awsVmInfo)
 {
     Aws::EC2::Model::TerminateInstancesRequest request;
     request.AddInstanceIds(awsVmInfo.id);
@@ -94,22 +94,22 @@ Result<void> AwsAllocator::deallocate(const AwsInstanceInfo& awsVmInfo)
         result.GetError().GetMessage()));
 }
 
-Result<InstanceInfo> AwsAllocator::allocate(const vm_scheduler::allocator::Slot& slot) {
+Result<VmInfo> AwsAllocator::allocate(const vm_scheduler::allocator::Slot& slot) {
     const auto instanceType = getInstanceTypeBySlot(slot);
     auto result = allocate(instanceType);
     if (result.IsSuccess()) {
         return convertAwsVmInfoToVmInfo(std::move(result).ValueOrThrow());
     }
-    return Result<InstanceInfo>::Failure(std::move(result).ErrorOrThrow());
+    return Result<VmInfo>::Failure(std::move(result).ErrorOrThrow());
 }
 
-Result<void> AwsAllocator::deallocate(const InstanceInfo& instanceInfo)
+Result<void> AwsAllocator::deallocate(const VmInfo& instanceInfo)
 {
     const auto awsInstanceInfo = convertVmInfoToAwsVmInfo(instanceInfo);
     return deallocate(awsInstanceInfo);
 }
 
-Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::InstanceType& instanceType)
+Result<AwsVmInfo> AwsAllocator::createInstance(const Aws::EC2::Model::InstanceType& instanceType)
 {
     Aws::EC2::Model::RunInstancesRequest runRequest;
     runRequest
@@ -128,7 +128,7 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
                 << " based on ami " << runRequest.GetImageId()
                 << " in region " << runRequest.GetPlacement().GetAvailabilityZone()
                 << ": " << result.GetError().GetMessage() << std::endl;
-        return Result<AwsInstanceInfo>::Failure<AllocationException>(toString(
+        return Result<AwsVmInfo>::Failure<AllocationException>(toString(
             "Failed to start ec2 instance ", instanceTypeName,
             " based on ami ", runRequest.GetImageId(), ":",
             result.GetError().GetMessage()));
@@ -137,7 +137,7 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
     const auto& instances = result.GetResult().GetInstances();
     if (instances.empty()) {
         ERROR() << "Failed to create ec2 instance: empty instances list" << std::endl;
-        return Result<AwsInstanceInfo>::Failure<AllocationException>(toString(
+        return Result<AwsVmInfo>::Failure<AllocationException>(toString(
             "Failed to create ec2 instance ", instanceTypeName,
             " based on ami ", runRequest.GetImageId(), ":",
             result.GetError().GetMessage()));
@@ -147,13 +147,13 @@ Result<AwsInstanceInfo> AwsAllocator::createInstance(const Aws::EC2::Model::Inst
     INFO() << "Successfully created ec2 instance " << instanceId
            << " with type: " << instanceTypeName
            << " based on ami " << runRequest.GetImageId() << std::endl;
-    return Result{AwsInstanceInfo{
+    return Result{AwsVmInfo{
         .type = instanceType,
         .id = instanceId
     }};
 }
 
-Result<void> AwsAllocator::startInstance(const AwsInstanceInfo& instanceInfo)
+Result<void> AwsAllocator::startInstance(const AwsVmInfo& instanceInfo)
 {
     Aws::EC2::Model::StartInstancesRequest startRequest;
     startRequest.AddInstanceIds(instanceInfo.id);

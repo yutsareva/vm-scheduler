@@ -8,19 +8,19 @@
 
 namespace vm_scheduler::allocator {
 
-using InstanceType = std::string;
-using InstanceId = std::string;
+using VmType = std::string;
+using VmId = std::string;
 
-struct InstanceInfo {
-    InstanceType type;
-    InstanceId id;
+struct VmInfo {
+    VmType type;
+    VmId id;
     // AllocatorType: aws, azure
-    // InstanceState: created, started, stopped, terminated
+    // VmState: created, started, stopped, terminated
 };
 
 class VmAllocator {
-    virtual Result<InstanceInfo> allocate(const Slot& slot) = 0;
-    virtual Result<void> deallocate(const InstanceInfo& instanceInfo) = 0;
+    virtual Result<VmInfo> allocate(const Slot& slot) = 0;
+    virtual Result<void> deallocate(const VmInfo& instanceInfo) = 0;
 };
 
 } // namespace vm_scheduler::aws

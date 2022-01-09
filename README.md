@@ -1,12 +1,12 @@
-# Virtual machine scheduler as a service (VMSaaS)
+# Virtual machine scheduler (VMS)
 
 ## Use cases
 
-- Client registers his own profile in VMSaaS, provides some credentials to allocate VMs from his Amazon/Azure accounts.
-- Client can specify restrictions on VM / cpu allocated count.
-- Client can register several `tasks` -- binaries they want to launch.
-- Client can specify VM-spaces: sets of VMs are destined to launch specific tasks.
-- Client can specify strategies to launch VMs (use on-demand/spot instances, always keep some idle VMs to reduce
+- Initialize VMS with AWS/Azure credentials to allocate VMs from his Amazon/Azure accounts.
+- Specify restrictions on VM / cpu allocated count.
+- Register several `tasks` -- binaries to launch.
+- Specify VM-spaces: sets of VMs are destined to launch specific tasks.
+- Specify strategies to launch VMs (use on-demand/spot instances, always keep some idle VMs to reduce
   VM allocation and initialization time etc)
 
 - `Tasks` are provided by client binaries initialized with some data. `Tasks` can generate some output data
@@ -21,7 +21,7 @@
 ### Allocated VM storage
 - Stores data about allocated and deallocated VMs
 
-### Binary storage
+### Blob storage
 - Stores task binaries
 
 ### Output storage
@@ -35,13 +35,10 @@
 - Allocates new VMs
 - Deallocated idle VMs
 
-### Allocated instances storage
-- Stores info about allocated instances
-
 ### Task Launcher
 - Launches tasks
 
-### Fail detector
+### Monitor
 - Monitors state of launched tasks, allocated instances. Finds failed tasks / failed instances
 
 
@@ -61,6 +58,5 @@
 - No exceptions are expected to catch, Result<error, value> should be used otherwise
 - Strong types should be used for primitive types
 - Clean architecture - any usage of db/storage/another service should be an interface
-- Use namespaces
 
 

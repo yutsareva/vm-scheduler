@@ -8,7 +8,7 @@
 
 namespace vm_scheduler::allocator {
 
-struct AwsInstanceInfo {
+struct AwsVmInfo {
     Aws::EC2::Model::InstanceType type;
     Aws::String id;
 };
@@ -16,14 +16,14 @@ struct AwsInstanceInfo {
 class AwsAllocator : public VmAllocator {
 public:
     AwsAllocator();
-    Result<InstanceInfo> allocate(const Slot& slot) override;
-    Result<void> deallocate(const InstanceInfo& instanceInfo) override;
+    Result<VmInfo> allocate(const Slot& slot) override;
+    Result<void> deallocate(const VmInfo& instanceInfo) override;
 
 private:
-    Result<AwsInstanceInfo> allocate(const Aws::EC2::Model::InstanceType& instanceType);
-    Result<void> deallocate(const AwsInstanceInfo& instanceInfo);
-    Result<AwsInstanceInfo> createInstance(const Aws::EC2::Model::InstanceType& instanceType);
-    Result<void> startInstance(const AwsInstanceInfo& instanceInfo);
+    Result<AwsVmInfo> allocate(const Aws::EC2::Model::InstanceType& instanceType);
+    Result<void> deallocate(const AwsVmInfo& instanceInfo);
+    Result<AwsVmInfo> createInstance(const Aws::EC2::Model::InstanceType& instanceType);
+    Result<void> startInstance(const AwsVmInfo& instanceInfo);
 
 private:
     Aws::EC2::EC2Client client_;

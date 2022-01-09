@@ -7,10 +7,17 @@
 namespace vm_scheduler::task {
 
 class Task {
-    virtual TaskType type() const = 0;
-    //    virtual const Client& client() const;
-    virtual TaskState state() const = 0;
-    virtual const VmSpace& vmSpace() const = 0;
+public:
+    TaskType type() const { return type_; }
+    TaskState state() const { return state_; }
+    const VmSpace& vmSpace() const { return vmSpace_; }
+
+private:
+    TaskType type_;
+    TaskState state_;
+    VmSpace vmSpace_;
 };
+
+using Tasks = std::vector<Task>;
 
 } // namespace vm_scheduler::task
