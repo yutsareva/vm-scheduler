@@ -5,18 +5,19 @@ namespace vm_scheduler::queue {
 void InMemoryTaskQueue::add(task::Task&& task)
 {
     if (isFinal(task.state())) {
-        finishedTasks_.emplace(std::move(task));
+        finishedTasks_.emplace_back(std::move(task));
         return;
     }
     queue_.emplace(std::move(task));
 }
 
-Tasks InMemoryTaskQueue::get(const task::VmSpace& vmSpace, const size_t limit)
+task::Tasks InMemoryTaskQueue::get(const task::VmSpace& vmSpace, const size_t limit)
 {
-    Tasks tasks;
-    tasks.reserve(std::min(queue_.size(), count));
-    for (size_t i = 0 ; i < count && !queue_.enplty(); ++i) {
-        tasks.emplace(queue_.pop());
+    task::Tasks tasks;
+    tasks.reserve(std::min(queue_.size(), limit));
+    for (size_t i = 0 ; i < limit && !queue_.empty(); ++i) {
+        tasks.emplace_back(std::move(queue_.front()));
+        queue_.pop();
     }
     return tasks;
 }

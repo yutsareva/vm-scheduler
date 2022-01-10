@@ -1,8 +1,7 @@
 #pragma once
 
-#include "slot.h"
-
 #include <lib/common/result.h>
+#include <lib/common/slot.h>
 
 #include <string>
 
@@ -19,7 +18,7 @@ struct VmInfo {
 };
 
 class VmAllocator {
-    virtual Result<VmInfo> allocate(const Slot& slot) = 0;
+    virtual Result<VmInfo> allocate(const SlotCapacity& slot) = 0;
     virtual Result<void> deallocate(const VmInfo& instanceInfo) = 0;
 };
 

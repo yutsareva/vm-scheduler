@@ -2,24 +2,20 @@
 
 namespace vm_scheduler::vm_storage {
 
-std::vector<IdleSlot> InMemoryVmStorage::getSortedIdleSlots(const size_t limit) override
+std::vector<IdleSlot> InMemoryVmStorage::getSortedIdleSlots(const size_t limit)
 {
     std::vector<IdleSlot> idleSlots;
     std::transform(
-        allocated_vms_.begin(), allocated_vms_.end(), std::back_inserter(idleSlots), [](const VmInfo& vmInfo) -> IdleSlot {
-            return {.id = vmInfo.id, .cloud = vmInfo.cloud, .cpuCores = vmInfo.idleCpuCores, .memory = vmInfo.idleMemory};
+        allocated_vms_.begin(),
+        allocated_vms_.end(),
+        std::back_inserter(idleSlots),
+        [](const AllocatedVm& vmInfo) -> IdleSlot {
+            return {.id = vmInfo.id, .capacity = { .cpu = vmInfo.idleCapacity.cpu, .memory = vmInfo.idleCapacity.memory} };
         });
-    std::sort(idleSlots.begin(), idleSlots.end(), [](const IdleSlot& first, const IdleSlot& second) -> bool {
-        if (first.memory < second.memory) {
-            return true;
-        }
-        if (first.memory == second.memory) {
-            return first.cpuCores < second.cpuCores;
-        }
-        return false;
-    });
+    std::sort(idleSlots.begin(), idleSlots.end());
 
-    idleSlots.resize(std::min(limit, idleSlots.size()));
+    const size_t eraseCount = static_cast<size_t>(std::min(0, static_cast<int>(idleSlots.size()) - static_cast<int>(limit)));
+    idleSlots.erase(idleSlots.end() - eraseCount, idleSlots.end());
     return idleSlots;
 }
 

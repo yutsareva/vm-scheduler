@@ -30,7 +30,7 @@ AwsVmInfo convertVmInfoToAwsVmInfo(const VmInfo& vmInfo)
     };
 }
 
-Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const Slot&)
+Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const SlotCapacity&)
 {
     // TODO: implement
     return Aws::EC2::Model::InstanceType::t2_micro;
@@ -94,7 +94,7 @@ Result<void> AwsAllocator::deallocate(const AwsVmInfo& awsVmInfo)
         result.GetError().GetMessage()));
 }
 
-Result<VmInfo> AwsAllocator::allocate(const vm_scheduler::allocator::Slot& slot) {
+Result<VmInfo> AwsAllocator::allocate(const SlotCapacity& slot) {
     const auto instanceType = getInstanceTypeBySlot(slot);
     auto result = allocate(instanceType);
     if (result.IsSuccess()) {

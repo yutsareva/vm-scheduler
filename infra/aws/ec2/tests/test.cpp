@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_CASE(TestAllocateDeallocateAwsInstance)
     Aws::InitAPI(options);
 
     AwsAllocator allocator;
-    Slot slot = {
+    SlotCapacity slot = {
         .cpu = 1_cores,
         .memory = 1_GB,
     };

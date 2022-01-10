@@ -16,7 +16,7 @@ struct AwsVmInfo {
 class AwsAllocator : public VmAllocator {
 public:
     AwsAllocator();
-    Result<VmInfo> allocate(const Slot& slot) override;
+    Result<VmInfo> allocate(const SlotCapacity& slot) override;
     Result<void> deallocate(const VmInfo& instanceInfo) override;
 
 private:
