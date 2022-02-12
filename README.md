@@ -42,7 +42,7 @@
 - Monitors state of launched tasks, allocated instances. Finds failed tasks / failed instances
 
 
-<img src="./docs/vm_scheduler.drawio.svg?raw=true" width="800">
+<img src="./docs/vm_scheduler_seq_v3.drawio.svg?raw=true" width="800">
 
 ## API
 
