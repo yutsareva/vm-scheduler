@@ -46,5 +46,5 @@ git clone https://github.com/microsoft/vcpkg
 ./vcpkg/bootstrap-vcpkg.sh
 ./vcpkg/vcpkg install "aws-sdk-cpp[ec2]" --recurse
 
-apt install gcc-10
-apt install g++-10
+#apt install gcc-10
+#apt install g++-10

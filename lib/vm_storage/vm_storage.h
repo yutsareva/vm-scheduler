@@ -5,14 +5,6 @@
 
 namespace vm_scheduler::vm_storage {
 
-struct IdleSlot {
-    VmId id;
-    //    Cloud cloud;
-    SlotCapacity capacity;
-
-    bool operator<(const IdleSlot& other) { return capacity < other.capacity; }
-};
-
 class VmStorage {
 public:
     virtual void save(const AllocatedVm& vmInfo) = 0;

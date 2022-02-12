@@ -16,6 +16,7 @@ std::vector<IdleSlot> InMemoryVmStorage::getSortedIdleSlots(const size_t limit)
 
     const size_t eraseCount = static_cast<size_t>(std::min(0, static_cast<int>(idleSlots.size()) - static_cast<int>(limit)));
     idleSlots.erase(idleSlots.end() - eraseCount, idleSlots.end());
+
     return idleSlots;
 }
 

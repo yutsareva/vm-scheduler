@@ -29,4 +29,11 @@ struct DesiredSlot {
 
 using VmInfo = std::variant<VmId, DesiredSlot>;
 
+struct IdleSlot {
+    VmId id;
+    //    Cloud cloud;
+    SlotCapacity capacity;
+
+    bool operator<(const IdleSlot& other) { return capacity < other.capacity; }
+};
 } // namespace vm_scheduler
