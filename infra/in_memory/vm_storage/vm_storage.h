@@ -15,4 +15,4 @@ private:
     std::vector<AllocatedVm> allocated_vms_;
 };
 
-} // namespace vm_scheduler::vm_storage
+} // namespace vm_scheduler::task_storage
