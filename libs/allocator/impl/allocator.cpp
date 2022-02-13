@@ -12,8 +12,8 @@ Allocator::Allocator(TaskStorage* taskStorage, std::unique_ptr<CloudClient>&& cl
     : taskStorage_(taskStorage)
     , cloudClient_(std::move(cloudClient))
     , config_(createAllocatorConfig())
-          {
-          };
+{
+}
 
 void Allocator::allocate() noexcept
 {

@@ -22,11 +22,10 @@
 ### Tasks & VMs Storage
 - Stores status of tasks
 - Stores data about allocated and terminated VMs
-- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/task_storage
 - Assumed to have two implementations:
-  - Postgres with Optimistic Concurrency Control
-    - Code: https://github.com/yutsareva/vm-scheduler/tree/main/libs/db
+  - Postgres with Optimistic Concurrent Locking model
   - Postgres for storing finished tasks and Zookeeper for storing current plan
+- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/task_storage
 
 ### Output/input storage
 - Stores tasks' inputs/outputs
@@ -36,14 +35,13 @@
   and finds an appropriate VM or decides to allocate a new one to launch the task.
 - VM Assigner is a part of core scheduler
   - Implements an algorithm to choose VMs for tasks
-- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/scheduler
+- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/scheduler
 
 ### Allocator
 - Allocates new VMs
 - Terminates idle VMs
 - Cloud Client implements communication with cloud providers
-- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/allocator
-
+- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/allocator
 
 ### Agent
 - Launches on allocated instaces
@@ -55,13 +53,14 @@
 - Monitors state of launched tasks, allocated instances
 - Finds failed tasks / failed instances
 
-
 ### DockerHub
 - Stores docker images
 
+### Task Registry
+- Server base
 
 ## API (TBD refine)
-
+### Server API for users
 - Register client profile (provides credentials to allocate instances from their cloud account)
 - Register task types (docker images)
 - Register VM-spaces
@@ -70,6 +69,7 @@
 - Get state/result of task
 - Get stats
 - Get profile info/stats
+### Server API for agents running on allocated instances (TBD)
 
 
 ## Code (-design/-style) rules

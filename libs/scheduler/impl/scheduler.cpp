@@ -12,8 +12,8 @@ Scheduler::Scheduler(BackendId id, TaskStorage* taskStorage)
     : id_(std::move(id))
     , taskStorage_(taskStorage)
     , config_(createSchedulerConfig())
-          {
-          };
+{
+}
 
 void Scheduler::schedule() noexcept
 {

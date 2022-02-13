@@ -14,8 +14,6 @@ TaskRegistry::TaskRegistry(
     , allocator_(taskStorage_.get(), std::move(cloudClient))
     , scheduler_(id_, taskStorage_.get())
 {
-    allocate_.start();
-    schedule_.start();
     INFO() << "Backend with id = " << id_ << " started";
 }
 
