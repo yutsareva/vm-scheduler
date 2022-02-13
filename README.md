@@ -22,10 +22,11 @@
 ### Tasks & VMs Storage
 - Stores status of tasks
 - Stores data about allocated and terminated VMs
+- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/task_storage
 - Assumed to have two implementations:
-  - Postgres with Optimistic Concurrent Locking model
+  - Postgres with Optimistic Concurrency Control
+    - Code: https://github.com/yutsareva/vm-scheduler/tree/main/libs/db
   - Postgres for storing finished tasks and Zookeeper for storing current plan
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/task_storage
 
 ### Output/input storage
 - Stores tasks' inputs/outputs
@@ -35,13 +36,13 @@
   and finds an appropriate VM or decides to allocate a new one to launch the task.
 - VM Assigner is a part of core scheduler
   - Implements an algorithm to choose VMs for tasks
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/scheduler
+- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/scheduler
 
 ### Allocator
 - Allocates new VMs
 - Terminates idle VMs
 - Cloud Client implements communication with cloud providers
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/allocator
+- Library: https://github.com/yutsareva/vm-scheduler/tree/main/libs/allocator
 
 
 ### Agent
