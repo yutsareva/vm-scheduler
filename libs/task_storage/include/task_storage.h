@@ -21,6 +21,12 @@ public:
         const std::string& backendId, const std::chrono::seconds& schedulingInterval) noexcept = 0;
     virtual Result<State> getCurrentState() noexcept = 0;
     virtual Result<void> commitPlanChange(const StateChange& state, const PlanId planId) noexcept = 0;
+    virtual Result<std::vector<AllocationPendingVmInfo>> getVmsToAllocate(
+        const size_t maxVmAllocationCount) noexcept = 0;
+    virtual Result<void> setVmStatus(const VmId id, const VmStatus status) noexcept = 0;
+    virtual Result<void> saveVmAllocationResult(const VmId id, const AllocatedVmInfo& allocatedVmInfo) noexcept = 0;
+    virtual Result<std::vector<TerminationPendingVmInfo>> getVmsToTerminate(
+        const size_t maxVmATerminationCount) noexcept = 0;
 };
 
 } // namespace vm_scheduler
