@@ -14,6 +14,8 @@
 ## Architecture
 <img src="./docs/scheduler-schema.drawio.svg?raw=true" width="800">
 
+### Sequence diagram
+<img src="./docs/vm_scheduler_seq_v3.drawio.svg?raw=true" width="800">
 
 ## Entities (TBD refine)
 
@@ -56,7 +58,6 @@
 ### DockerHub
 - Stores docker images
 
-<img src="./docs/vm_scheduler_seq_v3.drawio.svg?raw=true" width="800">
 
 ## API (TBD refine)
 
