@@ -19,8 +19,10 @@ struct DesiredSlot {
     bool operator==(const DesiredSlot&) const = default;
 };
 
+std::ostream& operator<<(std::ostream& out, const DesiredSlot& desiredSlot);
+
 using VmInfo = std::variant<VmId, DesiredSlot>;
-using TaskToVm = std::unordered_map<TaskId, VmInfo>;
+using JobToVm = std::unordered_map<JobId, VmInfo>;
 
 struct VmCapacityUpdate {
     VmId id;
@@ -29,19 +31,25 @@ struct VmCapacityUpdate {
     bool operator==(const VmCapacityUpdate&) const = default;
 };
 
+std::ostream& operator<<(std::ostream& out, const VmCapacityUpdate& vmCapacityUpdate);
+
 struct StateChange {
-    TaskToVm vmAssignments;
+    JobToVm vmAssignments;
     std::vector<VmId> vmsToTerminate;
     std::vector<VmCapacityUpdate> vmCapacityUpdates;
 
     bool operator==(const StateChange&) const = default;
 };
 
+std::ostream& operator<<(std::ostream& out, const StateChange& state);
+
 struct State {
-    std::vector<QueuedTaskInfo> queuedTasks;
+    std::vector<QueuedJobInfo> queuedJobs;
     std::vector<ActiveVm> vms;
 
     bool operator==(const State&) const = default;
 };
+
+std::ostream& operator<<(std::ostream& out, const State& state);
 
 } // namespace vm_scheduler

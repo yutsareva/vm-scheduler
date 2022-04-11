@@ -32,12 +32,13 @@ struct TerminationPendingVmInfo {
 };
 
 enum class VmStatus {
-    PendingAllocation,
-    Allocating,
-    Allocated,
-    PendingTermination,
-    Terminating,
-    Terminated,
+    PendingAllocation /* "pending_allocation" */,
+    Allocating /* "allocating" */,
+    Allocated /* "allocated" */,
+    AgentStarted /* "agent_started" */,
+    PendingTermination /* "pending_termination" */,
+    Terminating /* "terminating" */,
+    Terminated /* "terminated" */,
 };
 
 struct ActiveVm { // status: pending_allocation or allocated
@@ -47,5 +48,9 @@ struct ActiveVm { // status: pending_allocation or allocated
 
     bool operator==(const ActiveVm&) const = default;
 };
+
+std::ostream& operator<<(std::ostream& out, const std::vector<ActiveVm>& activeVms);
+
+std::vector<VmStatus> getActiveVmStatuses();
 
 } // namespace vm_scheduler
