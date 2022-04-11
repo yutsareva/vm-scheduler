@@ -1,114 +1,133 @@
-CREATE SCHEMA IF NOT EXISTS tasks;
+CREATE SCHEMA IF NOT EXISTS scheduler;
 
-CREATE TYPE tasks.vm_status AS ENUM (
-    'pending_allocation', 'allocating', 'allocated', 'pending_termination', 'terminating', 'terminated');
 
-CREATE TABLE tasks.vms
-(
-    id                 serial PRIMARY KEY,
-    status             tasks.vm_status          NOT NULL,
+-- ************************************ VMs table ************************************
 
-    cpu                integer                  NOT NULL, -- cores
-    ram                integer                  NOT NULL, -- MB
-    cpu_idle           integer                  NOT NULL, -- cores
-    ram_idle           integer                  NOT NULL, -- MB
+CREATE TYPE scheduler.vm_status AS ENUM (
+    'pending_allocation', 'allocating', 'allocated', 'agent_started',
+    'pending_termination', 'terminating', 'terminated');
 
-    cloud_vm_id        text,
-    cloud_vm_type      text,
+CREATE TABLE scheduler.vms(
+                              id                  serial PRIMARY KEY,
+                              status              scheduler.vm_status NOT NULL,
 
-    created            timestamp with time zone NOT NULL,
-    last_finished_task timestamp with time zone,
-    agent_activity     timestamp with time zone
+                              cpu                 integer NOT NULL,  -- cores
+                              ram                 integer NOT NULL,  -- MB
+                              cpu_idle            integer NOT NULL,  -- cores
+                              ram_idle            integer NOT NULL,  -- MB
+
+                              cloud_vm_id         text,
+                              cloud_vm_type       text,
+
+                              created             timestamp with time zone NOT NULL,
+                              last_status_update  timestamp with time zone NOT NULL,
+                              agent_activity      timestamp with time zone,
+
+                              restart_count       integer NOT NULL DEFAULT 0
 );
 
-CREATE TYPE tasks.task_status AS ENUM (
-    'queued', 'scheduled', 'running', 'completed', 'error', 'internal_error');
-
-CREATE TABLE tasks.vm_statuses_log
-(
-    vm_id     integer REFERENCES tasks.vms (id),
-    status    tasks.vm_status,
-    timestamp timestamp with time zone NOT NULL
-);
-
-CREATE OR REPLACE FUNCTION update_vm_log() RETURNS TRIGGER AS
-$$
+CREATE OR REPLACE FUNCTION update_last_status_update() RETURNS TRIGGER AS $$
 BEGIN
-    IF ((TG_OP = 'INSERT') OR (TG_OP = 'UPDATE') AND (OLD.status != NEW.status)) THEN
-        IF (OLD.status != NEW.status) THEN
-            INSERT INTO tasks.vm_statuses_log(vm_id, status, timestamp)
-            VALUES (NEW.id, NEW.status, NOW());
-        END IF;
+    IF ((TG_OP = 'UPDATE') AND (OLD.status != NEW.status)) THEN
+        UPDATE scheduler.vms SET last_status_update = NOW()
+        WHERE id = NEW.id;
     END IF;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_vm_log
-    AFTER INSERT OR UPDATE
-    ON tasks.vms
-    FOR EACH ROW
-EXECUTE PROCEDURE update_vm_log();
+CREATE TRIGGER update_last_status_update AFTER INSERT OR UPDATE ON scheduler.vms
+    FOR EACH ROW EXECUTE PROCEDURE update_last_status_update();
 
-CREATE TABLE tasks.task_groups
-(
-    id        serial PRIMARY KEY,
-    client_id text    NOT NULL,
-    job_count integer NOT NULL
+
+-- ************************************ VM statuses log table ************************
+
+CREATE TABLE scheduler.vm_statuses_log(
+                                          vm_id               integer REFERENCES scheduler.vms(id),
+                                          status              scheduler.vm_status,
+                                          timestamp           timestamp with time zone NOT NULL
 );
 
-
-CREATE TABLE tasks.tasks
-(
-    id            serial PRIMARY KEY,
-    status        tasks.task_status        NOT NULL,
-    task_group_id integer                  NOT NULL REFERENCES tasks.task_groups (id),
-
-    cpu           integer                  NOT NULL, -- cores
-    ram           integer                  NOT NULL, -- MB
-    estimation    interval                 NOT NULL,
-    task_inputs   jsonb                    NOT NULL,
-    task_outputs  jsonb,
-
-    message       text,
-    created       timestamp with time zone NOT NULL,
-    started       timestamp with time zone,
-    finished      timestamp with time zone,
-
-    vm_id         integer REFERENCES tasks.vms (id)
-);
-
-CREATE TABLE tasks.task_statuses_log
-(
-    task_id   integer REFERENCES tasks.tasks (id),
-    status    tasks.task_status,
-    timestamp timestamp with time zone NOT NULL
-);
-
-CREATE OR REPLACE FUNCTION update_task_log() RETURNS TRIGGER AS
-$$
+CREATE OR REPLACE FUNCTION update_vm_log() RETURNS TRIGGER AS $$
 BEGIN
-    IF ((TG_OP = 'INSERT') OR (TG_OP = 'UPDATE') AND (OLD.status != NEW.status)) THEN
-        IF (OLD.status != NEW.status) THEN
-            INSERT INTO tasks.task_statuses_log(task_id, status, timestamp)
-            VALUES (NEW.id, NEW.status, NOW());
-        END IF;
+    IF ((TG_OP = 'INSERT') OR ((TG_OP = 'UPDATE') AND (OLD.status != NEW.status))) THEN
+        INSERT INTO scheduler.vm_statuses_log(vm_id, status, timestamp)
+        VALUES (NEW.id, NEW.status, NOW());
     END IF;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_task_log
-    AFTER INSERT OR UPDATE
-    ON tasks.tasks
-    FOR EACH ROW
-EXECUTE PROCEDURE update_task_log();
+CREATE TRIGGER update_vm_log AFTER INSERT OR UPDATE ON scheduler.vms
+    FOR EACH ROW EXECUTE PROCEDURE update_vm_log();
 
-CREATE TABLE tasks.plan
-(
-    id         serial PRIMARY KEY,
-    created    timestamp with time zone NOT NULL,
-    updated    timestamp with time zone NOT NULL,
-    backend_id text
+
+-- ************************************ Tasks table **********************************
+
+CREATE TABLE scheduler.tasks(
+                                id                  serial PRIMARY KEY,
+                                job_count           integer NOT NULL,
+                                settings            jsonb NOT NULL,
+                                image_version       text NOT NULL,
+                                client_id           text NOT NULL
 );
-CREATE INDEX ON tasks.plan (updated);
+
+
+-- ************************************ Jobs table ***********************************
+
+CREATE TYPE scheduler.job_status AS ENUM (
+    'queued', 'scheduled', 'running', 'completed', 'error', 'internal_error', 'cancelling', 'cancelled');
+
+CREATE TABLE scheduler.jobs(
+                               id                  serial PRIMARY KEY,
+                               status              scheduler.job_status NOT NULL,
+                               task_id             integer NOT NULL REFERENCES scheduler.tasks(id),
+
+                               cpu                 integer NOT NULL,  -- cores
+                               ram                 integer NOT NULL,  -- MB
+                               estimation          interval NOT NULL,
+                               options             jsonb NOT NULL,
+                               result_url          text,
+
+                               message             text,
+                               created             timestamp with time zone NOT NULL,
+                               started             timestamp with time zone,
+                               finished            timestamp with time zone,
+
+                               vm_id               integer REFERENCES scheduler.vms(id),
+
+                               restart_count       integer NOT NULL DEFAULT 0
+);
+
+
+-- ************************************ Job statuses log table ***********************
+
+CREATE TABLE scheduler.job_statuses_log(
+                                           job_id              integer REFERENCES scheduler.jobs(id),
+                                           status              scheduler.job_status,
+                                           timestamp           timestamp with time zone NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION update_job_log() RETURNS TRIGGER AS $$
+BEGIN
+    IF ((TG_OP = 'INSERT') OR ((TG_OP = 'UPDATE') AND (OLD.status != NEW.status))) THEN
+        INSERT INTO scheduler.job_statuses_log(job_id, status, timestamp)
+        VALUES (NEW.id, NEW.status, NOW());
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_job_log AFTER INSERT OR UPDATE ON scheduler.jobs
+    FOR EACH ROW EXECUTE PROCEDURE update_job_log();
+
+
+-- ************************************ Plan table ***********************************
+
+CREATE TABLE scheduler.plan(
+                               id                  serial PRIMARY KEY,
+                               created             timestamp with time zone NOT NULL,
+                               updated             timestamp with time zone NOT NULL,
+                               backend_id          text
+);
+CREATE INDEX ON scheduler.plan(updated);
