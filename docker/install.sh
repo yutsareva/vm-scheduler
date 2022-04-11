@@ -40,11 +40,15 @@ apt-get install -y \
 	autoconf \
 	iputils-ping \
 	binutils-dev \
-	libboost-all-dev
+	libboost-all-dev \
+	libpthread-stubs0-dev
+#	protobuf-compiler
 
 git clone https://github.com/microsoft/vcpkg
 ./vcpkg/bootstrap-vcpkg.sh
 ./vcpkg/vcpkg install "aws-sdk-cpp[ec2]" --recurse
+./vcpkg/vcpkg install "protobuf" --recurse
+./vcpkg/vcpkg install "grpc" --recurse
 
 #apt install gcc-10
 #apt install g++-10

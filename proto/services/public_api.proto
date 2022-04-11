@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/task.proto";
+import "proto/structures/task_addition_result.proto";
+import "proto/structures/task_execution_result.proto";
+import "proto/structures/task_state.proto";
+
+import "google/protobuf/empty.proto";
+
+
+service PublicApiScheduler {
+    rpc healthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc addTask (Task) returns (TaskAdditionResult);
+    rpc getTaskState (TaskId) returns (TaskState);
+    rpc getTaskResult (TaskId) returns (TaskExecutionResult);
+    rpc cancelRunningJobs (TaskId) returns (google.protobuf.Empty);
+}

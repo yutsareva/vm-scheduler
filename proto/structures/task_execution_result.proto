@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/job.proto";
+import "proto/structures/task.proto";
+
+
+message JobExecutionResult {
+  required JobStatus status = 1;
+  optional string result_url = 2;
+}
+
+message TaskExecutionResult {
+  required TaskStatus status = 1;
+  repeated JobExecutionResult job_results = 2;
+}

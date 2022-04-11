@@ -1,0 +1,40 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/job.proto";
+import "proto/structures/task.proto";
+import "proto/structures/task_execution_result.proto";
+
+
+message VmId {
+  required uint64 value = 1;
+}
+
+message AssignedJob {
+  required JobId id = 1;
+  required JobStatus status = 2;
+}
+
+message AssignedJobs {
+  repeated AssignedJob jobs = 1;
+}
+
+message JobToLaunch {
+  required JobId id = 1;
+  required string image_version = 2;
+  required JobLimits job_limits = 3;
+  required string task_settings = 4;
+  required string job_options = 5;
+}
+
+message LaunchRequest {
+  required VmId vm_id = 1;
+  required JobId job_id = 2;
+}
+
+message ExecutionJobState {
+  required VmId vm_id = 1;
+  required JobId job_id = 2;
+  required JobExecutionResult job_result = 3;
+}

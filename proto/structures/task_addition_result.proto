@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/task.proto";
+
+
+message TaskAdditionResult {
+  required TaskId task_id = 1;
+}

@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+
+message JobLimits {
+  required uint32 memory_mb = 1;
+  required uint32 cpu_cores = 2;
+}
+
+message JobId {
+  required uint64 value = 1;
+}
+
+enum JobStatus {
+  JOB_QUEUED = 1;
+  JOB_RUNNING = 2;
+  JOB_COMPLETED = 3;
+  JOB_CANCELLED = 4;
+  JOB_FAILED = 5;
+}

@@ -1,0 +1,31 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/job.proto";
+
+
+message TaskId {
+  required uint64 value = 1;
+}
+
+message TaskLimits {
+  required JobLimits job_limits = 1;
+  required uint32 execution_s = 2;
+}
+
+message Task {
+  required TaskLimits limits = 1;
+  required string settings = 2;
+  required uint32 job_count = 3;
+  required string image_version = 4;
+  required string client_id = 5;
+
+  repeated string job_options = 6;
+}
+
+enum TaskStatus {
+  TASK_QUEUED = 1;
+  TASK_RUNNING = 2;
+  TASK_COMPLETED = 3;
+}

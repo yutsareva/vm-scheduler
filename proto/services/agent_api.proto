@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package vm_scheduler.proto;
+
+import "proto/structures/agent.proto";
+import "proto/structures/job.proto";
+import "proto/structures/task.proto";
+
+import "google/protobuf/empty.proto";
+
+
+service AgentApiScheduler {
+  rpc getAssignedJobs(VmId) returns (AssignedJobs);
+
+  rpc getJobToLaunch(LaunchRequest) returns (JobToLaunch);
+
+  rpc updateJobState(ExecutionJobState) returns (google.protobuf.Empty);
+}
