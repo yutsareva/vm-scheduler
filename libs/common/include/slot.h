@@ -12,4 +12,6 @@ struct SlotCapacity {
     auto operator<=>(const SlotCapacity&) const = default;
 };
 
+std::ostream& operator<<(std::ostream& out, const SlotCapacity& capacity);
+
 } // namespace vm_scheduler

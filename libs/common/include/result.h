@@ -1,5 +1,7 @@
 #pragma once
 
+#include "libs/common/include/errors.h"
+
 #include <exception>
 #include <optional>
 #include <variant>
@@ -9,39 +11,17 @@ namespace vm_scheduler {
 template<typename T>
 class [[nodiscard]] Result {
 public:
-    Result(T&& value) { result_ = std::move(value); }
-    Result(std::exception_ptr error)
-    {
-        result_ = std::move(error);
-    }
+    explicit Result(T value) : result_(std::move(value)) { }
+    explicit Result(std::exception_ptr error) : result_(std::move(error)) { }
 
-    static Result Success(T&& value) {
-        return {std::move(value)};
-    }
+    static Result Success(T value) { return {std::move(value)}; }
 
-    static Result Failure(std::exception_ptr error)
-    {
-        return {std::move(error)};
-    }
+    static Result Failure(std::exception_ptr error) { return Result{std::move(error)}; }
 
     template<typename TException>
     static Result Failure(const std::string& errorString)
     {
-        return {std::make_exception_ptr(TException(errorString))};
-    }
-
-    template<typename TException>
-    static Result Failure(const std::string& errorString, std::exception_ptr nestedError)
-    {
-        try {
-            throw(TException(errorString));
-        } catch (const TException& outerError) {
-            try {
-                std::throw_with_nested(nestedError);
-            } catch (const std::exception&) {
-                return Failure(std::current_exception());
-            }
-        }
+        return Result{std::make_exception_ptr(TException(errorString))};
     }
 
     static Result Failure(const std::string& errorString)
@@ -49,15 +29,9 @@ public:
         return {std::make_exception_ptr(RuntimeException(errorString))};
     }
 
-    bool IsFailure() const
-    {
-        return std::holds_alternative<std::exception_ptr>(result_);
-    }
+    bool IsFailure() const { return std::holds_alternative<std::exception_ptr>(result_); }
 
-    bool IsSuccess() const
-    {
-        return std::holds_alternative<T>(result_);
-    }
+    bool IsSuccess() const { return std::holds_alternative<T>(result_); }
 
     T ValueOrThrow() &&
     {
@@ -80,52 +54,84 @@ public:
         if (IsFailure()) {
             return std::get<std::exception_ptr>(std::move(result_));
         }
-        throw RuntimeException("tried to extract error from Result with value");
+        throw RuntimeException("Tried to extract error from Result with value");
+    }
+
+    const std::exception_ptr& ErrorRefOrThrow() const
+    {
+        if (IsFailure()) {
+            return std::get<std::exception_ptr>(result_);
+        }
+        throw RuntimeException("Tried to extract error from Result with value");
+    }
+
+    template<typename TError>
+    bool holdsErrorType() const
+    {
+        if (IsSuccess()) {
+            return false;
+        }
+        try {
+            std::rethrow_exception(ErrorRefOrThrow());
+        } catch (const TError& ex) {
+            return true;
+        } catch (const std::exception& ex) {
+            return false;
+        }
     }
 
 private:
     std::variant<std::exception_ptr, T> result_;
 };
 
-template <>
+template<>
 class [[nodiscard]] Result<void> {
 public:
-    static Result Success() {
-        return {};
-    }
+    static Result Success() { return {}; }
 
-    Result(std::exception_ptr error)
-    {
-        error_ = std::move(error);
-    }
+    explicit Result(std::exception_ptr error) : error_(std::move(error)) { }
 
-    static Result Failure(std::exception_ptr error)
-    {
-        return {std::move(error)};
-    }
+    static Result Failure(std::exception_ptr error) { return Result{std::move(error)}; }
 
     template<typename TException>
     static Result Failure(const std::string& errorString)
     {
-        return {std::make_exception_ptr(TException(errorString))};
+        return Result{std::make_exception_ptr(TException(errorString))};
     }
 
-    bool IsFailure() const
-    {
-        return error_.has_value();
-    }
+    bool IsFailure() const { return error_.has_value(); }
 
-    bool IsSuccess() const
-    {
-        return !IsFailure();
-    }
+    bool IsSuccess() const { return !IsFailure(); }
     std::exception_ptr&& ErrorOrThrow() &&
     {
         if (IsFailure()) {
             return std::move(error_).value();
         }
-        throw RuntimeException("tried to extract error from Result with value");
+        throw RuntimeException("Tried to extract error from Result with value");
     }
+    const std::exception_ptr& ErrorRefOrThrow() const
+    {
+        if (IsFailure()) {
+            return error_.value();
+        }
+        throw RuntimeException("Tried to extract error from Result with value");
+    }
+
+    template<typename TError>
+    bool holdsErrorType() const
+    {
+        if (IsSuccess()) {
+            return false;
+        }
+        try {
+            std::rethrow_exception(ErrorRefOrThrow());
+        } catch (const TError& ex) {
+            return true;
+        } catch (const std::exception& ex) {
+            return false;
+        }
+    }
+
 private:
     Result() = default;
     std::optional<std::exception_ptr> error_;
