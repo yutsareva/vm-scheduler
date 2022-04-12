@@ -4,7 +4,6 @@
 
 #include <gmock/gmock.h>
 
-
 namespace vm_scheduler::testing {
 
 class CloudClientMock : public CloudClient {

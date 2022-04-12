@@ -6,7 +6,6 @@
 
 #include <string>
 
-
 namespace vm_scheduler {
 
 class CloudClient {

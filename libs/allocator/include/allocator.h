@@ -5,7 +5,6 @@
 
 #include <libs/task_storage/include/task_storage.h>
 
-
 namespace vm_scheduler {
 
 class Allocator {
