@@ -2,8 +2,8 @@ syntax = "proto2";
 
 package vm_scheduler.proto;
 
-import "proto/structures/job.proto";
-import "proto/structures/task.proto";
+import "structures/job.proto";
+import "structures/task.proto";
 
 
 message JobExecutionResult {

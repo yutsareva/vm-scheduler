@@ -2,9 +2,9 @@ syntax = "proto2";
 
 package vm_scheduler.proto;
 
-import "proto/structures/job.proto";
-import "proto/structures/task.proto";
-import "proto/structures/task_execution_result.proto";
+import "structures/job.proto";
+import "structures/task.proto";
+import "structures/task_execution_result.proto";
 
 
 message VmId {

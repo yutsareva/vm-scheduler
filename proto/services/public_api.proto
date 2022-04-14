@@ -2,10 +2,10 @@ syntax = "proto2";
 
 package vm_scheduler.proto;
 
-import "proto/structures/task.proto";
-import "proto/structures/task_addition_result.proto";
-import "proto/structures/task_execution_result.proto";
-import "proto/structures/task_state.proto";
+import "structures/task.proto";
+import "structures/task_addition_result.proto";
+import "structures/task_execution_result.proto";
+import "structures/task_state.proto";
 
 import "google/protobuf/empty.proto";
 

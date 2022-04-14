@@ -2,9 +2,9 @@ syntax = "proto2";
 
 package vm_scheduler.proto;
 
-import "proto/structures/agent.proto";
-import "proto/structures/job.proto";
-import "proto/structures/task.proto";
+import "structures/agent.proto";
+import "structures/job.proto";
+import "structures/task.proto";
 
 import "google/protobuf/empty.proto";
 
