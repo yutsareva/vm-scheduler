@@ -4,6 +4,7 @@
 #include <libs/common/include/types.h>
 
 #include <chrono>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -23,6 +24,9 @@ enum class JobStatus {
     Error /* "error" */,
     InternalError /* "internal_error" */,
 };
+
+const char* toString(JobStatus v);
+JobStatus jobStatusFromString(const std::string& s);
 
 const std::unordered_set<JobStatus>& getFinalJobStatuses();
 

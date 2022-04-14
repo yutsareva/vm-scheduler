@@ -1,9 +1,38 @@
 #include <libs/state/include/task.h>
 
 #include <iostream>
-
+#include <unordered_map>
 
 namespace vm_scheduler {
+
+const char* toString(JobStatus v)
+{
+    switch(v) {
+        case JobStatus::Queued: return "queued";
+        case JobStatus::Scheduled: return "scheduled";
+        case JobStatus::Running: return "running";
+        case JobStatus::Completed: return "completed";
+        case JobStatus::Cancelling: return "cancelling";
+        case JobStatus::Cancelled: return "cancelled";
+        case JobStatus::Error: return "error";
+        case JobStatus::InternalError: return "internal_error";
+    }
+}
+
+JobStatus jobStatusFromString(const std::string& s)
+{
+    const static std::unordered_map<std::string, JobStatus> map = {
+        {"queued", JobStatus::Queued},
+        {"scheduled", JobStatus::Scheduled},
+        {"running", JobStatus::Running},
+        {"completed", JobStatus::Completed},
+        {"cancelling", JobStatus::Cancelling},
+        {"cancelled", JobStatus::Cancelled},
+        {"error", JobStatus::Error},
+        {"internal_error", JobStatus::InternalError},
+    };
+    return map.at(s);
+}
 
 const std::unordered_set<JobStatus>& getFinalJobStatuses()
 {

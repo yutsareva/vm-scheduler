@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iterator>
+#include <functional>
 #include <string>
 #include <sstream>
 
@@ -39,7 +41,7 @@ std::string joinSeq(const TContainer& items)
     const auto formatValue = [](const TItem& item, std::stringstream& stream)
     { stream << item; };
 
-    return asFormattedList(items, format);
+    return asFormattedList(items, formatValue);
 }
 
 } // namespace vm_scheduler

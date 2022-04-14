@@ -6,18 +6,18 @@
 
 #include <memory>
 
-
-namespace vm_scheduler {
+namespace vm_scheduler::pg {
 
 class TransactionHandle {
 public:
     TransactionHandle(ConnectionHandle&& connectionHandle, std::unique_ptr<pqxx::transaction_base>&& txn);
 
     pqxx::transaction_base* operator->();
+    pqxx::transaction_base& operator*();
 
 private:
     ConnectionHandle connectionHandle_;
     std::unique_ptr<pqxx::transaction_base> txn_;
 };
 
-} // namespace vm_scheduler
+} // namespace vm_scheduler::pg

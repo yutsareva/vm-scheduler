@@ -4,8 +4,7 @@
 
 #include <memory>
 
-
-namespace vm_scheduler {
+namespace vm_scheduler::pg {
 
 class PgPool;
 
@@ -23,4 +22,4 @@ private:
     std::unique_ptr<pqxx::lazyconnection> connection_;
 };
 
-} // namespace vm_scheduler
+} // namespace vm_scheduler::pg

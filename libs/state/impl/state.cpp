@@ -29,7 +29,7 @@ std::ostream& operator<<(std::ostream& out, const StateChange& stateChange)
                     ? toString("existing VM with id ", std::get<VmId>(vmInfo), ", ")
                     : toString("desired VM {", std::get<DesiredSlot>(vmInfo), "}, "));
     }
-    out << "], VMs to terminate: [" << JoinSeq(", ", stateChange.vmsToTerminate);
+//    out << "], VMs to terminate: [" << joinSeq(stateChange.vmsToTerminate);
     out << "], VM capacities updates: [";
     for (const auto& vmCapacityUpdate : stateChange.vmCapacityUpdates) {
         out << vmCapacityUpdate << ", ";

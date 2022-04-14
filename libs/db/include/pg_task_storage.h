@@ -12,7 +12,7 @@ namespace vm_scheduler {
 
 class PgTaskStorage : public TaskStorage {
 public:
-    explicit PgTaskStorage(pg::Pool&& pool) noexcept;
+    explicit PgTaskStorage(pg::PgPool&& pool) noexcept;
     ~PgTaskStorage() override = default;
 
     Result<CreatedJobs> addTask(const TaskParameters& taskParameters) noexcept override;
@@ -60,7 +60,7 @@ private:
     Result<std::vector<QueuedJobInfo>> getQueuedJobs_(pqxx::transaction_base& txn) noexcept;
     Result<std::vector<ActiveVm>> getActiveVms_(pqxx::transaction_base& txn) noexcept;
     Result<void> setVmStatus_(const std::vector<VmId>& vmIds, const VmStatus status) noexcept;
-    Result<pg::TransactionHandle> masterReadOnlyTransaction_() noexcept;
+    Result<pg::TransactionHandle> readOnlyTransaction_() noexcept;
     Result<pqxx::result> execWritableQuery_(const std::string& query) noexcept;
     Result<void> restartAllocatingVms_(
         const std::string& restartCondition, const size_t vmRestartAttemptCount) noexcept;
@@ -72,7 +72,7 @@ private:
         const size_t jobRestartAttemptCount) noexcept;
 
 private:
-    pg::Pool pool_;
+    pg::PgPool pool_;
 };
 
 } // namespace vm_scheduler

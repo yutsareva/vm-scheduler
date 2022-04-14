@@ -3,6 +3,8 @@
 #include <libs/common/include/slot.h>
 #include <libs/common/include/types.h>
 
+#include <vector>
+
 
 namespace vm_scheduler {
 
@@ -41,6 +43,8 @@ enum class VmStatus {
     Terminated /* "terminated" */,
 };
 
+const char* toString(VmStatus v);
+
 struct ActiveVm { // status: pending_allocation or allocated
     VmId id;
     SlotCapacity totalCapacity;
@@ -51,6 +55,6 @@ struct ActiveVm { // status: pending_allocation or allocated
 
 std::ostream& operator<<(std::ostream& out, const std::vector<ActiveVm>& activeVms);
 
-std::vector<VmStatus> getActiveVmStatuses();
+const std::vector<VmStatus>& getActiveVmStatuses();
 
 } // namespace vm_scheduler

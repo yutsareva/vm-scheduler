@@ -1,16 +1,11 @@
 #include "libs/postgres/impl/connection.h"
 #include "libs/postgres/include/pg_pool.h"
 
+namespace vm_scheduler::pg {
 
-namespace vm_scheduler {
-
-ConnectionHandle::ConnectionHandle(
-        PgPool& pool,
-        std::unique_ptr<pqxx::lazyconnection>&& connection)
-    : pool_(pool),
-    connection_(std::move(connection))
-{
-}
+ConnectionHandle::ConnectionHandle(PgPool& pool, std::unique_ptr<pqxx::lazyconnection>&& connection)
+    : pool_(pool), connection_(std::move(connection))
+{ }
 
 ConnectionHandle::~ConnectionHandle()
 {
@@ -22,4 +17,4 @@ pqxx::lazyconnection& ConnectionHandle::get()
     return *connection_;
 }
 
-} // namespace vm_scheduler
+} // namespace vm_scheduler::pg

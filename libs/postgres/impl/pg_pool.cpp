@@ -1,44 +1,52 @@
 #include "libs/postgres/include/pg_pool.h"
-//#include "impl/pg_pool.h"
 
-namespace vm_scheduler {
+namespace vm_scheduler::pg {
 
-//PgPool::PgPool(const size_t poolSize)
-//{
-//    for (auto i = 0; i < poolSize_; i++) {
-//        connections.emplace(std::make_shared<pqxx::lazyconnection>());
-//    }
-//}
-//
-//std::shared_ptr<pqxx::lazyconnection> PGPool::connection()
-//{
-//    std::unique_lock<std::mutex> lock_(m_mutex);
-//
-//    // if pool is empty, then wait until it notifies back
-//    while (m_pool.empty()) {
-//        m_condition.wait(lock_);
-//    }
-//
-//    // get new connection in queue
-//    auto conn_ = m_pool.front();
-//    // immediately pop as we will use it now
-//    m_pool.pop();
-//
-//    return conn_;
-//}
-//
-//void PGPool::freeConnection(std::shared_ptr<pqxx::lazyconnection> conn_)
-//{
-//    std::unique_lock<std::mutex> lock_(m_mutex);
-//
-//    // push a new connection into a pool
-//    m_pool.push(conn_);
-//
-//    // unlock mutex
-//    lock_.unlock();
-//
-//    // notify one of thread that is waiting
-//    m_condition.notify_one();
-//}
+PgPool::PgPool(const size_t poolSize)
+{
+    for (auto i = 0; i < poolSize; i++) {
+        connectionPool_.emplace(std::make_unique<pqxx::lazyconnection>());
+    }
+}
 
-} // namespace vm_scheduler
+TransactionHandle PgPool::readOnlyTransaction()
+{
+    ConnectionHandle connectionHandle(*this, connection());
+
+    auto txn = std::make_unique<pqxx::read_transaction>(connectionHandle.get());
+    return {std::move(connectionHandle), std::move(txn)};
+}
+
+TransactionHandle PgPool::writableTransaction()
+{
+    ConnectionHandle connectionHandle(*this, connection());
+
+    auto txn = std::make_unique<pqxx::transaction<>>(connectionHandle.get());
+    return {std::move(connectionHandle), std::move(txn)};
+}
+
+std::unique_ptr<pqxx::lazyconnection> PgPool::connection()
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    while (connectionPool_.empty()) {
+        poolNotEmpty_.wait(lock);
+    }
+
+    auto conn = std::move(connectionPool_.front());
+    connectionPool_.pop();
+
+    return conn;
+}
+
+void PgPool::freeConnection(std::unique_ptr<pqxx::lazyconnection>&& connection)
+{
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        connectionPool_.push(std::move(connection));
+    }
+
+    poolNotEmpty_.notify_one();
+}
+
+} // namespace vm_scheduler::pg

@@ -5,18 +5,18 @@
 #include <libs/state/include/errors.h>
 
 #include <libs/common/include/stringify.h>
-#include <libs/postgres/helpers.h>
+#include <libs/postgres/include/helpers.h>
 
 #include <libs/common/include/log.h>
 
 #include <exception>
-#include <format>
+//#include <format>
 #include <sstream>
 
 
 namespace vm_scheduler {
 
-PgTaskStorage::PgTaskStorage(pgpool3::Pool&& pool) noexcept
+PgTaskStorage::PgTaskStorage(pg::PgPool&& pool) noexcept
     : pool_(std::move(pool))
 {
 }
@@ -24,7 +24,7 @@ PgTaskStorage::PgTaskStorage(pgpool3::Pool&& pool) noexcept
 Result<pqxx::result> PgTaskStorage::execWritableQuery_(const std::string& query) noexcept
 {
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         auto result = pg::execQuery(query, *txn);
         txn->commit();
         return Result<pqxx::result>(std::move(result));
@@ -37,7 +37,7 @@ Result<pqxx::result> PgTaskStorage::execWritableQuery_(const std::string& query)
 Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters) noexcept
 {
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         const auto createTaskQuery = toString(
             "INSERT INTO scheduler.tasks (job_count, client_id, settings, image_version) ",
             "VALUES(", taskParameters.jobCount, ", ", txn->quote(taskParameters.clientId), ", ",
@@ -47,14 +47,25 @@ Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters)
         const auto createTask = pg::execQuery(createTaskQuery, *txn);
         const auto taskId = createTask[0].at("id").as<TaskId>();
 
-        const auto addJobsQuery = toString(
-            "INSERT INTO scheduler.jobs ",
-            "(task_id, cpu, ram, estimation, status, created, options) ",
-            "VALUES {} RETURNING id;");
+        // TODO: replace with std::format
+//        const auto addJobsQuery = toString(
+//            "INSERT INTO scheduler.jobs ",
+//            "(task_id, cpu, ram, estimation, status, created, options) ",
+//            "VALUES {} RETURNING id;");
+        const auto addJobsQuery =
+            "INSERT INTO scheduler.jobs "
+            "(task_id, cpu, ram, estimation, status, created, options) "
+            "VALUES ";
+        // TODO: replace with std::format
+//        const auto addJobValue = toString(
+//            "({}, ", taskParameters.requiredCapacity.cpu.count(), ", ", taskParameters.requiredCapacity.ram.count(),
+//            ", interval '", taskParameters.estimation.count(), " seconds', '",
+//            toString(JobStatus::Queued), "', NOW(), {})"
+//        );
         const auto addJobValue = toString(
-            "({}, ", taskParameters.requiredCapacity.cpu.count(), ", ", taskParameters.requiredCapacity.ram.count(),
+            ", ", taskParameters.requiredCapacity.cpu.count(), ", ", taskParameters.requiredCapacity.ram.count(),
             ", interval '", taskParameters.estimation.count(), " seconds', '",
-            ToString(JobStatus::Queued), "', NOW(), {})"
+            toString(JobStatus::Queued), "', NOW(), "
         );
 
         std::vector<std::string> addJobValuesFormatted;
@@ -62,10 +73,19 @@ Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters)
         std::transform(taskParameters.jobOptions.begin(), taskParameters.jobOptions.end(),
                        std::back_inserter(addJobValuesFormatted),
                        [&addJobValue, &taskId, &txn](const JobOptions& jobOptions) {
-                           return std::format(addJobValue, taskId, txn->quote(jobOptions));});
+                           // TODO: replace with std::format
+                           // return std::format(addJobValue, taskId, txn->quote(jobOptions));
+                           return toString(
+                               "(", taskId, addJobValue, txn->quote(jobOptions), ")"
+                            );
+                       });
 
-        const auto addJobsValuesConcatted = std::string(joinSeq(", ", addJobValuesFormatted));
-        const auto addJobsQueryFormatted = std::format(addJobsQuery, addJobsValuesConcatted);
+        const auto addJobsValuesConcatted = std::string(joinSeq(addJobValuesFormatted));
+        // TODO: replace with std::format
+        // const auto addJobsQueryFormatted = std::format(addJobsQuery, addJobsValuesConcatted);
+        const auto addJobsQueryFormatted = toString(
+            addJobsQuery, addJobsValuesConcatted, "RETURNING id;"
+        );
         const auto addedJobs = pg::execQuery(addJobsQueryFormatted, *txn);
         txn->commit();
 
@@ -109,7 +129,7 @@ Result<PlanId> PgTaskStorage::startScheduling(
 
 Result<State> PgTaskStorage::getCurrentState() noexcept
 {
-    auto txnResult = masterReadOnlyTransaction_();
+    auto txnResult = readOnlyTransaction_();
     if (txnResult.IsFailure()) {
         return Result<State>::Failure(std::move(txnResult).ErrorOrThrow());
     }
@@ -212,22 +232,22 @@ Result<void> PgTaskStorage::refreshPlanActivityTs_(pqxx::transaction_base& txn, 
     }
 }
 
-Result<pgpool3::TransactionHandle> PgTaskStorage::acquireLock_(const bool noWait) noexcept
+Result<pg::TransactionHandle> PgTaskStorage::acquireLock_(const bool noWait) noexcept
 {
     const auto lockQuery = toString("LOCK TABLE scheduler.plan IN SHARE ROW EXCLUSIVE MODE", noWait ? " NOWAIT;" : ";");
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         pg::execQuery(lockQuery, *txn);
         return Result{std::move(txn)};
     } catch (const pqxx::sql_error& ex) {
         if (strstr(ex.what(), "could not obtain lock") != 0) {
-            return Result<pgpool3::TransactionHandle>::Failure<LockUnavailable>(toString(
+            return Result<pg::TransactionHandle>::Failure<LockUnavailable>(toString(
                 "Failed to obtain SHARE ROW EXCLUSIVE lock on scheduler.plan table",  noWait ? " with NOWAIT;" : ""));
         }
-        return Result<pgpool3::TransactionHandle>::Failure<PgException>(toString(
+        return Result<pg::TransactionHandle>::Failure<PgException>(toString(
             "Unexpected sql error while acquiring lock: ", ex.what()));
     } catch (const std::exception& ex) {
-        return Result<pgpool3::TransactionHandle>::Failure<PgException>(toString(
+        return Result<pg::TransactionHandle>::Failure<PgException>(toString(
             "Unexpected exception while acquiring lock: ", ex.what()));
     }
 }
@@ -272,14 +292,14 @@ Result<void> PgTaskStorage::terminateVms_(
     }
 
     const auto terminateVmsQuery = toString(
-        "UPDATE scheduler.vms SET status = '", ToString(VmStatus::PendingTermination), "' ",
+        "UPDATE scheduler.vms SET status = '", toString(VmStatus::PendingTermination), "' ",
         "WHERE id IN ", pg::asFormattedList(vmsToTerminate, txn), ";");
     try {
         pg::execQuery(terminateVmsQuery, txn);
         return Result<void>::Success();
     } catch (const std::exception& ex) {
         return Result<void>::Failure<PgException>(toString("Unexpected exception while setting status '",
-                                                           ToString(VmStatus::PendingTermination), "' for vms: ", ex.what()));
+                                                           toString(VmStatus::PendingTermination), "' for vms: ", ex.what()));
     }
 }
 
@@ -326,7 +346,7 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, 
             const auto& desiredSlot = std::get<DesiredSlot>(vm);
             const auto addVmsQuery = toString(
                 "INSERT INTO scheduler.vms (status, cpu, ram, cpu_idle, ram_idle, created, last_status_update) ",
-                "VALUES('", ToString(VmStatus::PendingAllocation), "', ",
+                "VALUES('", toString(VmStatus::PendingAllocation), "', ",
                 desiredSlot.total.cpu.count(), ", ", desiredSlot.total.ram.count(), ", ",
                 desiredSlot.idle.cpu.count(), ", ", desiredSlot.idle.ram.count(), ", NOW(), NOW()) RETURNING id;");
 
@@ -352,7 +372,7 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, 
 
     const auto updateJobQuery = toString(
         "UPDATE scheduler.jobs AS t SET ",
-        "status = '", ToString(JobStatus::Scheduled), "', "
+        "status = '", toString(JobStatus::Scheduled), "', "
         "vm_id = a.vm_id ",
         "FROM (VALUES ",
         tmpTable.str(),
@@ -363,8 +383,8 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, 
         pg::execQuery(updateJobQuery, txn);
     } catch (const std::exception& ex) {
         return Result<void>::Failure<PgException>(toString(
-            "Unexpected exception while setting status '", ToString(JobStatus::Scheduled),
-            "' for jobs ", joinSeq(", ", jobIds), ": ", ex.what()));
+            "Unexpected exception while setting status '", toString(JobStatus::Scheduled),
+            "' for jobs ", joinSeq(jobIds), ": ", ex.what()));
     }
     return Result<void>::Success();
 }
@@ -372,7 +392,7 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, 
 Result<std::vector<QueuedJobInfo>> PgTaskStorage::getQueuedJobs_(pqxx::transaction_base& txn) noexcept
 {
     const auto queuedJobsQuery = toString(
-        "SELECT id, cpu, ram FROM scheduler.jobs WHERE status = '", ToString(JobStatus::Queued), "';");
+        "SELECT id, cpu, ram FROM scheduler.jobs WHERE status = '", toString(JobStatus::Queued), "';");
     try {
         const auto jobsResult = pg::execQuery(queuedJobsQuery, txn);
 
@@ -424,13 +444,13 @@ Result<std::vector<ActiveVm>> PgTaskStorage::getActiveVms_(pqxx::transaction_bas
     }
 }
 
-Result<pgpool3::TransactionHandle> PgTaskStorage::masterReadOnlyTransaction_() noexcept
+Result<pg::TransactionHandle> PgTaskStorage::readOnlyTransaction_() noexcept
 {
     try {
-        auto txn = pool_.masterReadOnlyTransaction();
+        auto txn = pool_.readOnlyTransaction();
         return Result{std::move(txn)};
     } catch (const std::exception& ex) {
-        return Result<pgpool3::TransactionHandle>::Failure<PgException>(toString(
+        return Result<pg::TransactionHandle>::Failure<PgException>(toString(
             "Unexpected exception while creating master read-only transaction: ", ex.what()));
     }
 }
@@ -438,9 +458,9 @@ Result<pgpool3::TransactionHandle> PgTaskStorage::masterReadOnlyTransaction_() n
 Result<std::vector<AllocationPendingVmInfo>> PgTaskStorage::getVmsToAllocate(const size_t maxVmAllocationCount) noexcept
 {
     const auto vmsToAllocateQuery = toString(
-        "UPDATE scheduler.vms SET status = '", ToString(VmStatus::Allocating), "' ",
+        "UPDATE scheduler.vms SET status = '", toString(VmStatus::Allocating), "' ",
         "WHERE id IN ("
-        "SELECT id FROM scheduler.vms WHERE status = '", ToString(VmStatus::PendingAllocation),
+        "SELECT id FROM scheduler.vms WHERE status = '", toString(VmStatus::PendingAllocation),
         "' LIMIT ", maxVmAllocationCount, " FOR UPDATE SKIP LOCKED) "
         "RETURNING id, cpu, ram;");
 
@@ -467,9 +487,9 @@ Result<std::vector<TerminationPendingVmInfo>> PgTaskStorage::getVmsToTerminate(
     const size_t maxVmATerminationCount) noexcept
 {
     const auto vmsToTerminateQuery = toString(
-        "UPDATE scheduler.vms SET status = '", ToString(VmStatus::Terminating), "' ",
+        "UPDATE scheduler.vms SET status = '", toString(VmStatus::Terminating), "' ",
         "WHERE id IN ("
-        "SELECT id FROM scheduler.vms WHERE status = '", ToString(VmStatus::PendingTermination),
+        "SELECT id FROM scheduler.vms WHERE status = '", toString(VmStatus::PendingTermination),
         "' LIMIT ", maxVmATerminationCount, " FOR UPDATE SKIP LOCKED) "
         "RETURNING id, cloud_vm_id;");
 
@@ -492,8 +512,8 @@ Result<std::vector<TerminationPendingVmInfo>> PgTaskStorage::getVmsToTerminate(
 Result<void> PgTaskStorage::setVmStatus_(const std::vector<VmId>& vmIds, const VmStatus status) noexcept
 {
     const auto setVmStatusQuery = toString(
-        "UPDATE scheduler.vms SET status = '", ToString(status),
-        "' WHERE id IN (", joinSeq(", ", vmIds), ");");
+        "UPDATE scheduler.vms SET status = '", toString(status),
+        "' WHERE id IN (", joinSeq(vmIds), ");");
 
     auto result = execWritableQuery_(setVmStatusQuery);
     if (result.IsSuccess()) {
@@ -516,7 +536,7 @@ Result<void> PgTaskStorage::saveVmTerminationResult(const VmId vmId) noexcept
 Result<void> PgTaskStorage::cancelTask(const TaskId taskId) noexcept
 {
     const auto cancelTaskQuery = toString(
-        "UPDATE scheduler.jobs SET status = '", ToString(JobStatus::Cancelling),
+        "UPDATE scheduler.jobs SET status = '", toString(JobStatus::Cancelling),
         "' WHERE task_id = ", taskId, " AND status NOT IN ",
         pg::asFormattedList(getFinalJobStatuses()), ";");
 
@@ -531,7 +551,7 @@ Result<void> PgTaskStorage::cancelTask(const TaskId taskId) noexcept
 Result<void> PgTaskStorage::saveVmAllocationResult(const VmId id, const AllocatedVmInfo& allocatedVmInfo) noexcept
 {
     const auto saveVmAllocationResultQuery = toString(
-        "UPDATE scheduler.vms SET status = '", ToString(VmStatus::Allocated),
+        "UPDATE scheduler.vms SET status = '", toString(VmStatus::Allocated),
         "', cloud_vm_id = '", allocatedVmInfo.id, "', cloud_vm_type = '", allocatedVmInfo.type,
         "' WHERE id = ", id, ";");
 
@@ -549,7 +569,7 @@ Result<JobStates> PgTaskStorage::getJobStates(const TaskId taskId) noexcept
         "SELECT status, result_url FROM scheduler.jobs WHERE task_id = ", taskId, ";");
 
     try {
-        auto txn = pool_.slaveTransaction();
+        auto txn = pool_.readOnlyTransaction();
         auto result = pg::execQuery(getJobStatesQuery, *txn);
 
         JobStates jobStates;
@@ -557,7 +577,7 @@ Result<JobStates> PgTaskStorage::getJobStates(const TaskId taskId) noexcept
         std::transform(result.begin(), result.end(), std::back_inserter(jobStates),
                        [](const pqxx::row& r) -> JobState {
                            return {
-                               .status = FromString<JobStatus>(r.at("status").as<std::string>()),
+                               .status = jobStatusFromString(r.at("status").as<std::string>()),
                                .resultUrl = r.at("result_url").as<std::optional<JobResultUrl>>(),
                            };
                        });
@@ -574,9 +594,9 @@ Result<void> PgTaskStorage::restartAllocatingVms_(
 {
     const auto restartAllocatingVmsQuery = toString(
         "UPDATE scheduler.vms "
-        "SET status = '", ToString(VmStatus::PendingAllocation), "', ",
+        "SET status = '", toString(VmStatus::PendingAllocation), "', ",
         "restart_count = restart_count + 1",
-        "WHERE status = '", ToString(VmStatus::Allocating), "' ",
+        "WHERE status = '", toString(VmStatus::Allocating), "' ",
         "AND restart_count < ", vmRestartAttemptCount, " ",
         "AND " + restartCondition,
         "RETURNING id;"
@@ -587,9 +607,9 @@ Result<void> PgTaskStorage::restartAllocatingVms_(
     }
 
     const auto reallocatingVmIds = pg::extractIds<VmId>(result.ValueRefOrThrow());
-    INFO() << "Moved vms from status " << ToString(VmStatus::Allocating)
-           << " to " << ToString(VmStatus::PendingAllocation)
-           << ": [" << joinSeq(", ", reallocatingVmIds) << "]";
+    INFO() << "Moved vms from status " << toString(VmStatus::Allocating)
+           << " to " << toString(VmStatus::PendingAllocation)
+           << ": [" << joinSeq(reallocatingVmIds) << "]";
     return Result<void>::Success();
 }
 
@@ -613,30 +633,30 @@ void restartJobs(
 {
     const auto returnJobsToQueuedStatusQuery = toString(
         "UPDATE scheduler.jobs ",
-        "SET status = '", ToString(JobStatus::Queued), "', ",
+        "SET status = '", toString(JobStatus::Queued), "', ",
         "restart_count = restart_count + 1 ",
-        "WHERE status = '", ToString(initialStatus), "' ",
+        "WHERE status = '", toString(initialStatus), "' ",
         "AND restart_count < ", jobRestartAttemptCount, " ",
-        "AND vm_id IN (", joinSeq(", ", vmIds), ")",
+        "AND vm_id IN (", joinSeq(vmIds), ")",
         "RETURNING id;"
     );
     const auto failJobsQuery = toString(
-        "UPDATE scheduler.jobs SET status = '", ToString(JobStatus::InternalError), "' ",
-        "WHERE status = '", ToString(initialStatus), "' ",
+        "UPDATE scheduler.jobs SET status = '", toString(JobStatus::InternalError), "' ",
+        "WHERE status = '", toString(initialStatus), "' ",
         "AND restart_count >= ", jobRestartAttemptCount, " ",
-        "AND vm_id IN (", joinSeq(", ", vmIds), ")",
+        "AND vm_id IN (", joinSeq(vmIds), ")",
         "RETURNING id;"
     );
 
     const auto queuedJobs = pg::execQuery(returnJobsToQueuedStatusQuery, txn);
     const auto queuedJobIds = pg::extractIds<JobId>(queuedJobs);
-    INFO() << "Restart jobs: change status " << ToString(initialStatus) << " -> "
-           << ToString(JobStatus::Queued) << ": [" << joinSeq(", ", queuedJobIds) << "]";
+    INFO() << "Restart jobs: change status " << toString(initialStatus) << " -> "
+           << toString(JobStatus::Queued) << ": [" << joinSeq(queuedJobIds) << "]";
 
     const auto failedJobs = pg::execQuery(failJobsQuery, txn);
     const auto failedJobIds = pg::extractIds<JobId>(failedJobs);
-    INFO() << "Restart jobs: change status " << ToString(initialStatus) << " -> "
-           << ToString(JobStatus::InternalError) << ": [" << joinSeq(", ", failedJobIds) << "]";
+    INFO() << "Restart jobs: change status " << toString(initialStatus) << " -> "
+           << toString(JobStatus::InternalError) << ": [" << joinSeq(failedJobIds) << "]";
 }
 
 } // anonymous namespace
@@ -651,23 +671,23 @@ Result<void> PgTaskStorage::terminateVms_(
 {
     const auto terminateVmsQuery = toString(
         "UPDATE scheduler.vms ",
-        "SET status = '", ToString(targetStatus), "' ",
-        "WHERE status = '", ToString(initialStatus), "' ",
+        "SET status = '", toString(targetStatus), "' ",
+        "WHERE status = '", toString(initialStatus), "' ",
         "AND restart_count >= ", vmRestartAttemptCount, " ",
         "AND ", terminateCondition, " ",
         "RETURNING id;"
     );
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         auto terminatedVms = pg::execQuery(terminateVmsQuery, *txn);
 
         const auto terminatedVmIds = pg::extractIds<VmId>(terminatedVms);
         if (terminatedVmIds.empty()) {
             return Result<void>::Success();
         }
-        INFO() << "Moved vms from status " << ToString(initialStatus)
-               << " to " << ToString(targetStatus)
-               << ": [" << joinSeq(", ", terminatedVmIds) << "]";
+        INFO() << "Moved vms from status " << toString(initialStatus)
+               << " to " << toString(targetStatus)
+               << ": [" << joinSeq(terminatedVmIds) << "]";
 
         const auto initialJobStatus = JobStatus::Scheduled;
         restartJobs(*txn, terminatedVmIds, initialJobStatus, jobRestartAttemptCount);
@@ -699,13 +719,13 @@ Result<void> PgTaskStorage::rollbackUnallocatedVmsState(
     const size_t vmRestartAttemptCount,
     const size_t jobRestartAttemptCount) noexcept
 {
-    const auto restartCondition = toString("id IN (", joinSeq(", ", vmIds), ") ");
+    const auto restartCondition = toString("id IN (", joinSeq(vmIds), ") ");
     const auto restartResult = restartAllocatingVms_(restartCondition, vmRestartAttemptCount);
     if (restartResult.IsFailure()) {
         return restartResult;
     }
     const std::string terminateCondition = toString(
-        "id IN (", joinSeq(", ", vmIds), ")");
+        "id IN (", joinSeq(vmIds), ")");
     const auto vmInitialStatus = VmStatus::Allocating;
     const auto vmTargetStatus = VmStatus::Terminated;
     return terminateVms_(
@@ -719,13 +739,13 @@ Result<void> PgTaskStorage::terminateVmsWithInactiveAgents(
 {
     const auto terminateInactiveVmsQuery = toString(
         "UPDATE scheduler.vms "
-        "SET status = '", ToString(VmStatus::PendingTermination), "' ",
-        "WHERE status = '", ToString(VmStatus::AgentStarted), "' ",
+        "SET status = '", toString(VmStatus::PendingTermination), "' ",
+        "WHERE status = '", toString(VmStatus::AgentStarted), "' ",
         "AND NOW() > agent_activity + interval '", agentInactivityTimeLimit.count(), " seconds' ",
         "RETURNING id;"
     );
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         auto pendingTerminationVms = pg::execQuery(terminateInactiveVmsQuery, *txn);
 
         const auto pendingTerminationVmIds = pg::extractIds<VmId>(pendingTerminationVms);
@@ -733,8 +753,8 @@ Result<void> PgTaskStorage::terminateVmsWithInactiveAgents(
             return Result<void>::Success();
         }
         INFO() << "Handle VMs with inactive agents: set status "
-               << ToString(VmStatus::PendingTermination) << " for VMs: ["
-               << joinSeq(", ", pendingTerminationVmIds) << "]";
+               << toString(VmStatus::PendingTermination) << " for VMs: ["
+               << joinSeq(pendingTerminationVmIds) << "]";
 
         const auto initialJobStatus = JobStatus::Running;
         restartJobs(*txn, pendingTerminationVmIds, initialJobStatus, jobRestartAttemptCount);
@@ -771,7 +791,7 @@ std::vector<AssignedJob> pgResultToAssignedJobs(const pqxx::result& result)
                    [](const pqxx::row& r) -> AssignedJob {
                        return {
                            .id = r.at("id").as<JobId>(),
-                           .status = FromString<JobStatus>(r.at("status").as<std::string>()),
+                           .status = jobStatusFromString(r.at("status").as<std::string>()),
                        };
                    });
     return assignedJobs;
@@ -784,9 +804,9 @@ Result<std::vector<AssignedJob>> PgTaskStorage::getAssignedJobs(const VmId vmId)
 {
     const auto updateAgentStartedStatusQuery = toString(
         "UPDATE scheduler.vms "
-        "SET status = '", ToString(VmStatus::AgentStarted), "' "
+        "SET status = '", toString(VmStatus::AgentStarted), "' "
         "WHERE id = ", vmId, " "
-        "AND status = '", ToString(VmStatus::Allocated), "' "
+        "AND status = '", toString(VmStatus::Allocated), "' "
         "RETURNING id;"
     );
     const auto updateAgentActivityQuery = toString(
@@ -801,7 +821,7 @@ Result<std::vector<AssignedJob>> PgTaskStorage::getAssignedJobs(const VmId vmId)
         ";");
 
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         auto updateVmStatusResult = pg::execQuery(updateAgentStartedStatusQuery, *txn);
         if (!updateVmStatusResult.empty()) {
             INFO() << "Agent on VM with id " << vmId << " connected";
@@ -848,7 +868,7 @@ Result<JobToLaunch> PgTaskStorage::getJobToLaunch(const VmId vmId, const JobId j
         ";");
 
     try {
-        auto txn = pool_.slaveTransaction();
+        auto txn = pool_.readOnlyTransaction();
         auto result = pg::execQuery(getJobQuery, *txn);
         if (result.empty()) {
             return Result<JobToLaunch>::Failure<JobNotFoundException>(toString(
@@ -866,7 +886,7 @@ Result<void> PgTaskStorage::updateJobState(
     const VmId vmId, const JobId jobId, const JobState& jobState) noexcept
 {
     try {
-        auto txn = pool_.masterWriteableTransaction();
+        auto txn = pool_.writableTransaction();
         const auto lockGetStatusQuery = toString(
             "SELECT status FROM scheduler.jobs "
             "WHERE vm_id = ", vmId, " AND "
@@ -878,7 +898,7 @@ Result<void> PgTaskStorage::updateJobState(
             return Result<void>::Failure<JobNotFoundException>(toString(
                 "No job with id '", jobId, "' assigned for VM with id '", vmId, "'."));
         }
-        const auto jobStatus = FromString<JobStatus>(statusResult[0].at("status").as<std::string>());
+        const auto jobStatus = jobStatusFromString(statusResult[0].at("status").as<std::string>());
         if (jobStatus == JobStatus::Cancelling && jobState.status != JobStatus::Cancelled) {
             return Result<void>::Failure<JobCancelledException>(toString(
                 "Job with id '", jobId, "' assigned for VM with id '", vmId, "' was cancelled."));
@@ -892,7 +912,7 @@ Result<void> PgTaskStorage::updateJobState(
         const auto updateJobQuery = toString(
             "UPDATE scheduler.jobs "
             "SET result_url = ", txn->quote(jobState.resultUrl), ", "
-            "status = '", ToString(jobState.status), "', ",
+            "status = '", toString(jobState.status), "', ",
             updateStatement,
             "WHERE vm_id = ", vmId, " AND "
             "jobs.id = ", jobId, " AND "

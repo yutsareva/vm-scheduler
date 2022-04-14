@@ -9,4 +9,3 @@ file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
 
 add_library(db STATIC ${LIB_CXX_SOURCES})
 target_include_directories(db PUBLIC ${LIB_INCLUDE_PATH})
-target_link_libraries(db)
