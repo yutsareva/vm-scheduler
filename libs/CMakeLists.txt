@@ -1,11 +1,15 @@
 project(vm_scheduler_lib)
 
-#set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED 20)
 
 add_subdirectory(allocator)
-#add_subdirectory(blob_storage)
+add_subdirectory(aws/allocator)
+add_subdirectory(aws/allocator/tests)
 add_subdirectory(common)
+add_subdirectory(db)
 add_subdirectory(scheduler)
+add_subdirectory(server)
 add_subdirectory(state)
 add_subdirectory(task_registry)
+add_subdirectory(task_registry/tests)
 add_subdirectory(task_storage)

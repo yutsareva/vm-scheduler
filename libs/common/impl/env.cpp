@@ -14,6 +14,15 @@ std::string getFromEnvOrDefault(const std::string& envVarName, const std::string
     return defaultValue;
 }
 
+size_t getFromEnvOrDefault(const std::string& envVarName, const size_t defaultValue)
+{
+    auto envVarValue = std::getenv(envVarName.c_str());
+    if (envVarValue) {
+        return std::atoi(envVarValue);
+    }
+    return defaultValue;
+}
+
 std::string getFromEnvOrThrow(const std::string& envVarName)
 {
     auto envVarValue = std::getenv(envVarName.c_str());

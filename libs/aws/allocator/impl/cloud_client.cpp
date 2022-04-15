@@ -2,6 +2,7 @@
 #include "libs/aws/allocator/impl/errors.h"
 
 #include <libs/common/include/env.h>
+#include <libs/common/include/stringify.h>
 
 #include <libs/common/include/log.h>
 
@@ -30,7 +31,7 @@ Aws::EC2::Model::InstanceType getInstanceTypeBySlot(const SlotCapacity&)
 
 Aws::EC2::Model::Placement getPlacement()
 {
-    // TODO: in a bright future Allocater should allocate instances in different availability zones
+    // TODO: in a bright future Allocator should allocate instances in different availability zones
     // for jobs from one task
     Aws::EC2::Model::Placement placement;
     placement.SetAvailabilityZone("us-east-2a");

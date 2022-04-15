@@ -45,7 +45,7 @@ void Allocator::allocate() noexcept
             unallocatedVms, config_.common.vmRestartAttemptCount, config_.common.jobRestartAttemptCount);
 
         if (returnResult.IsFailure()) {
-            ERROR() << "Failed to restart or terminate unallocated vms: " << joinSeq(", ", unallocatedVms) << ": "
+            ERROR() << "Failed to restart or terminate unallocated vms: " << joinSeq(unallocatedVms) << ": "
                     << what(std::move(returnResult).ErrorOrThrow());
         }
     }
@@ -84,7 +84,7 @@ void Allocator::terminate() noexcept
         auto returnResult = taskStorage_->returnUnterminatedVms(unterminatedVms);
 
         if (returnResult.IsFailure()) {
-            ERROR() << "Failed to return unterminated vms to initial status: " << JoinSeq(", ", unterminatedVms) << ": "
+            ERROR() << "Failed to return unterminated vms to initial status: " << joinSeq(unterminatedVms) << ": "
                     << what(std::move(returnResult).ErrorOrThrow());
             // TODO: in a bright future Failure Detector will process VMs in wrong 'terminating' status
         }

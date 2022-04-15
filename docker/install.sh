@@ -41,14 +41,22 @@ apt-get install -y \
 	iputils-ping \
 	binutils-dev \
 	libboost-all-dev \
-	libpthread-stubs0-dev
+  libpqxx-dev
+#	libpthread-stubs0-dev
+
 #	protobuf-compiler
+# add-apt-repository 'deb http://mirrors.kernel.org/ubuntu hirsute main universe'
+# apt-get update
+# apt-get install gcc-11
+# apt-get -y --fix-broken install gcc-11 g++-11
+# apt-get install libc++-dev
 
 git clone https://github.com/microsoft/vcpkg
 ./vcpkg/bootstrap-vcpkg.sh
 ./vcpkg/vcpkg install "aws-sdk-cpp[ec2]" --recurse
 ./vcpkg/vcpkg install "protobuf" --recurse
 ./vcpkg/vcpkg install "grpc" --recurse
+./vcpkg/vcpkg install "rapidjson" --recurse
 
 #apt install gcc-10
 #apt install g++-10
