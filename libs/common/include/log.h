@@ -2,6 +2,6 @@
 
 #include <iostream>
 
-#define INFO() std::cerr
-#define DEBUG() std::cerr
-#define ERROR() std::cerr
+#define INFO() std::cerr << "\n"
+#define DEBUG() std::cerr << "\n"
+#define ERROR() std::cerr << "\n"

@@ -6,13 +6,13 @@
 
 namespace vm_scheduler {
 
-constexpr std::chrono::minutes DEFAULT_SCHEDULING_INTERVAL { 1 };
+constexpr size_t DEFAULT_SCHEDULING_INTERVAL_S { 60 };
 
 SchedulerConfig createSchedulerConfig() {
     return {
-        .schedulingInterval = std::chrono::minutes{getFromEnvOrDefault(
-            "VMS_SCHEDULING_INTERVAL", DEFAULT_SCHEDULING_INTERVAL.count())},
-        .vmAssignerType = getFromEnvOrDefault("VMS_ASSIGNER_TYPE", VmAssignerType::Simple),
+        .schedulingInterval = std::chrono::seconds{getFromEnvOrDefault(
+            "VMS_SCHEDULING_INTERVAL_S", DEFAULT_SCHEDULING_INTERVAL_S)},
+        .vmAssignerType = vmAssignerTypeFromString(getFromEnvOrDefault("VMS_ASSIGNER_TYPE", toString(VmAssignerType::Simple))),
     };
 }
 

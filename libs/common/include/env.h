@@ -1,6 +1,9 @@
 #pragma once
 
+#include "libs/common/include/stringify.h"
+
 #include <string>
+#include <type_traits>
 
 namespace vm_scheduler {
 

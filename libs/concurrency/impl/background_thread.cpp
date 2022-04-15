@@ -10,7 +10,7 @@ BackgroundThread::BackgroundThread(std::function<void()> payload, std::chrono::s
 
 BackgroundThread::~BackgroundThread()
 {
-    isStopped_.store(false);
+    isStopped_.store(true);
     isAwake_.notify_one();
     thread_.join();
 }
@@ -21,7 +21,7 @@ void BackgroundThread::runner()
         auto start = std::chrono::steady_clock::now();
         payload_();
         std::unique_lock<std::mutex> lock(mutex_);
-        while (!isStopped_ || (start + sleepDuration_ > std::chrono::steady_clock::now())) {
+        while (!isStopped_ && (start + sleepDuration_ > std::chrono::steady_clock::now())) {
             isAwake_.wait_until(lock, start + sleepDuration_);
         }
     }
