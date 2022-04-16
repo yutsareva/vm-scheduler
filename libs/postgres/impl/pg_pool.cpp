@@ -2,10 +2,10 @@
 
 namespace vm_scheduler::pg {
 
-PgPool::PgPool(const size_t poolSize)
+PgPool::PgPool(const size_t poolSize, const std::string& connectionString)
 {
     for (auto i = 0; i < poolSize; i++) {
-        connectionPool_.emplace(std::make_unique<pqxx::lazyconnection>());
+        connectionPool_.emplace(std::make_unique<pqxx::lazyconnection>(connectionString));
     }
 }
 

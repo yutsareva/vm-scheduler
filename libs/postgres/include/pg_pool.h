@@ -14,7 +14,7 @@ namespace vm_scheduler::pg {
 
 class PgPool {
 public:
-    PgPool(const size_t poolSize);
+    PgPool(const size_t poolSize, const std::string& connectionString);
     PgPool(PgPool&& pool)
         : mutex_()
         , poolNotEmpty_()
