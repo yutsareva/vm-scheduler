@@ -1,20 +1,17 @@
 package agent_api
 
 import (
-//     "context"
-//     "fmt"
-//     "os"
-//      pb "github.com/matzhouse/go-grpc/proto"
     "google.golang.org/grpc"
-//     "google.golang.org/grpc/grpclog"
+    "google.golang.org/grpc/grpclog"
+    pb_api "scheduler/services"
 )
 
 func main() {
         opts := []grpc.DialOption{
             grpc.WithInsecure(),
         }
-        args := os.Args
-        conn, err := grpc.Dial("127.0.0.1:5300", opts...)
+        //args := os.Args
+        conn, err := grpc.Dial("127.0.0.1:50002", opts...)
 
         if err != nil {
             grpclog.Fatalf("fail to dial: %v", err)
@@ -22,15 +19,15 @@ func main() {
 
         defer conn.Close()
 
-        client := pb.NewAgentApiSchedulerClient(conn)
-//         request := &pb.Request{
-//             Message: args[1],
-//         }
-//         response, err := client.Do(context.Background(), request)
-//
-//         if err != nil {
-//             grpclog.Fatalf("fail to dial: %v", err)
-//         }
-//
-//        fmt.Println(response.Message)
+        vmId := uint64(42)
+        client :=  pb_api.NewAgentApiSchedulerClient(conn)
+
+        config := getConfig()
+        state := State{}
+
+        pollChan := pollSchedulerForAssignments(vmId, client, &config, &state)
+
+        // ...
+
+        close(pollChan)
 }

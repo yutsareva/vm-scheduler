@@ -1,6 +1,7 @@
 syntax = "proto2";
 
 package vm_scheduler.proto;
+option go_package = "scheduler/services";
 
 import "structures/task.proto";
 import "structures/task_addition_result.proto";

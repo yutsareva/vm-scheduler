@@ -40,3 +40,6 @@ cmake-build-*/
 
 # Protobuf generated files
 *.pb.*
+
+# Go
+go.sum
