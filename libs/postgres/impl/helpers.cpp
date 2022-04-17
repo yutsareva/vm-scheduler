@@ -29,12 +29,14 @@ std::string getConnectionString(const std::optional<std::string>& connectionStri
     const auto dbName = getFromEnvOrThrow("PG_DB_NAME");
     const auto hosts = getFromEnvOrThrow("PG_HOSTS");
     const auto password = getFromEnvOrThrow("PG_PASSWORD");
+    const auto port = getFromEnvOrDefault("PG_PORT", 5432);
 
     return toString(
-        "user=", user, ",",
-        "dbname=", dbName, ",",
-        "hosts=", hosts, ",",
-        "password=", password, ","
+        "user=", user, " ",
+        "dbname=", dbName, " ",
+        "host=", hosts, " ",
+        "password=", password, " ",
+        "port=", port
     );
 }
 

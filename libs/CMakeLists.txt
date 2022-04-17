@@ -1,6 +1,6 @@
 add_subdirectory(allocator)
 add_subdirectory(aws/allocator)
-add_subdirectory(aws/allocator/tests)
+#add_subdirectory(aws/allocator/tests)
 add_subdirectory(concurrency)
 add_subdirectory(common)
 add_subdirectory(db)

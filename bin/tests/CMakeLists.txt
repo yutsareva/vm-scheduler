@@ -5,23 +5,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-#set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-
 enable_testing()
 
 add_executable(
-        test_aws_allocator
-        aws_allocator.cpp
+        test_failure_detector
+        failure_detector.cpp
 )
-add_dependencies(test_aws_allocator proto_lib)
+add_dependencies(test_failure_detector proto_lib)
 target_link_libraries(
-        test_aws_allocator
-        PUBLIC
+        test_failure_detector
         gtest_main
         gmock_main
         proto_lib
-        aws_allocator
         db
         lib_allocator
         lib_server
@@ -31,4 +26,4 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_aws_allocator)
+gtest_discover_tests(test_failure_detector)

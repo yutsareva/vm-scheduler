@@ -1,0 +1,30 @@
+services:
+  db: # psql "host=localhost port=5432 dbname=postgres password=postgres user=postgres"
+    image: postgres:14.2
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../libs/db/data/db_schema.sql:/docker-entrypoint-initdb.d/init.sql
+  scheduler:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    depends_on:
+      - db
+    ports:
+      - 50001:50001
+    environment:
+      PG_HOSTS: db
+      PG_PASSWORD: postgres
+      PG_USER: postgres
+      PG_DB_NAME: postgres
+      PG_POOL_SIZE: 10
+# Uncomment these lines to persist data on the local filesystem.
+#   environment:
+#     - PGDATA=/var/lib/postgresql/data/pgdata
+#   volumes:
+#     - ./pgdata:/var/lib/postgresql/data/pgdata

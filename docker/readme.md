@@ -1,3 +1,13 @@
-## Docker for building the project
+## Docker for building the project in Clion IDE
 
+```
+docker build -t vm_scheduler:1.2 -f Dockerfile .
+docker run -d -t --cap-add sys_ptrace -p127.0.0.1:6348:22 --name vm_scheduler --memory="16g" vm_scheduler:1.2
+```
 Cmake flags: `-DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake`
+
+## Main image
+
+```
+docker-compose up
+```
