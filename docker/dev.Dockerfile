@@ -2,6 +2,10 @@ FROM gcc:latest
 
 COPY install.sh /
 RUN sh install.sh
+# RUN apt-get install -y software-properties-common && \
+#    add-apt-repository 'deb http://mirrors.kernel.org/ubuntu hirsute main universe' && \
+#    apt-get update && \
+RUN apt-get install -y --fix-broken ssh rsync g++-11
 
 # User for CLion
 RUN groupadd -g 712342 clion_user_group

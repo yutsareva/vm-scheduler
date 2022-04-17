@@ -80,7 +80,7 @@ Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters)
                             );
                        });
 
-        const auto addJobsValuesConcatted = std::string(joinSeq(addJobValuesFormatted));
+        const auto addJobsValuesConcatted =  joinSeq(addJobValuesFormatted);
         // TODO: replace with std::format
         // const auto addJobsQueryFormatted = std::format(addJobsQuery, addJobsValuesConcatted);
         const auto addJobsQueryFormatted = toString(
@@ -566,7 +566,7 @@ Result<void> PgTaskStorage::saveVmAllocationResult(const VmId id, const Allocate
 Result<JobStates> PgTaskStorage::getJobStates(const TaskId taskId) noexcept
 {
     const auto getJobStatesQuery = toString(
-        "SELECT status, result_url FROM scheduler.jobs WHERE task_id = ", taskId, ";");
+        "SELECT status, COALESCE(result_url, '') as result_url FROM scheduler.jobs WHERE task_id = ", taskId, ";");
 
     try {
         auto txn = pool_.readOnlyTransaction();
@@ -576,13 +576,20 @@ Result<JobStates> PgTaskStorage::getJobStates(const TaskId taskId) noexcept
         jobStates.reserve(result.size());
         std::transform(result.begin(), result.end(), std::back_inserter(jobStates),
                        [](const pqxx::row& r) -> JobState {
+                           // TODO: replace with as<std::optional<std::string>> and remove COALESCE from query
+                           const auto resultUrlOrEmpty = r.at("result_url").as<std::string>();
                            return {
                                .status = jobStatusFromString(r.at("status").as<std::string>()),
-                               .resultUrl = r.at("result_url").as<std::optional<JobResultUrl>>(),
+                               .resultUrl
+                                   = resultUrlOrEmpty.empty()
+                                   ? std::nullopt
+                                   : std::optional<std::string>(resultUrlOrEmpty),
+//                               .resultUrl = r.at("result_url").as<std::optional<JobResultUrl>>(),
                            };
                        });
         return Result{jobStates};
     } catch (const std::exception& ex) {
+        ERROR() << ex.what();
         return Result<JobStates>::Failure<PgException>(toString(
             "Unexpected pg exception: ", ex.what()));
     }

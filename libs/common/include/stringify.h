@@ -22,15 +22,19 @@ using FormatValue = std::function<void(const TItem&, std::stringstream&)>;
 
 template <typename TContainer>
 requires std::forward_iterator<typename TContainer::iterator>
-    std::string asFormattedList(const TContainer& items, const FormatValue<typename TContainer::value_type>& formatValue)
+    std::string asFormattedList(
+        const TContainer& items,
+        const FormatValue<typename TContainer::value_type>& formatValue,
+        const std::string& start = "(",
+        const std::string& end = ")")
 {
     std::stringstream formattedList;
-    formattedList << "(";
+    formattedList << start;
     for (auto it = items.begin(); it != items.end(); ++it) {
         formattedList << (it != items.begin() ? ", " : "");
         formatValue(*it, formattedList);
     }
-    formattedList << ")";
+    formattedList << end;
     return formattedList.str();
 }
 
@@ -41,7 +45,7 @@ std::string joinSeq(const TContainer& items)
     const auto formatValue = [](const TItem& item, std::stringstream& stream)
     { stream << item; };
 
-    return asFormattedList(items, formatValue);
+    return asFormattedList(items, formatValue, "", "");
 }
 
 } // namespace vm_scheduler
