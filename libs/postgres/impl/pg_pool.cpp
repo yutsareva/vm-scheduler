@@ -1,5 +1,7 @@
 #include "libs/postgres/include/pg_pool.h"
 
+#include <libs/common/include/log.h>
+
 namespace vm_scheduler::pg {
 
 PgPool::PgPool(const size_t poolSize, const std::string& connectionString)
@@ -33,6 +35,7 @@ std::unique_ptr<pqxx::lazyconnection> PgPool::connection()
     while (connectionPool_.empty()) {
         poolNotEmpty_.wait(lock);
     }
+    DEBUG() << "PG pool size: " << connectionPool_.size();
 
     auto conn = std::move(connectionPool_.front());
     connectionPool_.pop();

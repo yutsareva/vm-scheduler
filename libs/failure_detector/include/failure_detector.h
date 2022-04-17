@@ -5,7 +5,6 @@
 
 #include <libs/concurrency/include/background_thread.h>
 
-
 namespace vm_scheduler {
 
 class FailureDetector {
@@ -23,4 +22,4 @@ private:
     TaskStorage* taskStorage_;
 };
 
-} // namespace maps::b2bgeo::vm_scheduler
+} // namespace vm_scheduler

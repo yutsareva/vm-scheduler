@@ -9,5 +9,5 @@ Cmake flags: `-DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake`
 ## Main image
 
 ```
-docker-compose up
+ docker-compose down --volumes && docker-compose up --build
 ```

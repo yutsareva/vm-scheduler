@@ -928,4 +928,4 @@ Result<void> PgTaskStorage::updateJobState(
     }
 }
 
-} // namespace maps::b2bgeo::vm_scheduler
+} // namespace vm_scheduler

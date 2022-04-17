@@ -11,7 +11,7 @@ class PgPool;
 class ConnectionHandle {
 public:
     ConnectionHandle(PgPool& pool, std::unique_ptr<pqxx::lazyconnection>&& connection);
-    ConnectionHandle(ConnectionHandle&&) = default;
+    ConnectionHandle(ConnectionHandle&& other);
 
     ~ConnectionHandle();
 

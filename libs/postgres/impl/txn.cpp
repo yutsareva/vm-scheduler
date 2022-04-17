@@ -3,7 +3,8 @@
 namespace vm_scheduler::pg {
 
 TransactionHandle::TransactionHandle(ConnectionHandle&& connectionHandle, std::unique_ptr<pqxx::transaction_base>&& txn)
-    : connectionHandle_(std::move(connectionHandle)), txn_(std::move(txn))
+    : txn_(std::move(txn))
+    , connectionHandle_(std::move(connectionHandle))
 { }
 
 pqxx::transaction_base* TransactionHandle::operator->()

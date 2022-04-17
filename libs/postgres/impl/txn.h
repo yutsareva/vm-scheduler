@@ -16,8 +16,8 @@ public:
     pqxx::transaction_base& operator*();
 
 private:
-    ConnectionHandle connectionHandle_;
     std::unique_ptr<pqxx::transaction_base> txn_;
+    ConnectionHandle connectionHandle_;
 };
 
 } // namespace vm_scheduler::pg
