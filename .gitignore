@@ -37,3 +37,6 @@ cmake-build-*/
 
 # Mac
 .DS_Store
+
+# Protobuf generated files
+*.pb.*

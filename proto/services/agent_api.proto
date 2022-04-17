@@ -1,10 +1,9 @@
 syntax = "proto2";
 
 package vm_scheduler.proto;
+option go_package = "proto/agent_api";
 
 import "structures/agent.proto";
-import "structures/job.proto";
-import "structures/task.proto";
 
 import "google/protobuf/empty.proto";
 
