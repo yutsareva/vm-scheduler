@@ -19,13 +19,12 @@ func main() {
 
         defer conn.Close()
 
-        vmId := uint64(42)
         client :=  pb_api.NewAgentApiSchedulerClient(conn)
 
         config := getConfig()
         state := State{}
 
-        pollChan := pollSchedulerForAssignments(vmId, client, &config, &state)
+        pollChan := pollSchedulerForAssignments(client, &config, &state)
 
         // ...
 
