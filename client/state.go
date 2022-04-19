@@ -95,12 +95,21 @@ func (s *State) getReadyToRunJob() (*JobId, *JobInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// TODO: track attempt count, do not get stuck on first failing job
 	for jobId, _ := range s.readyToRunJobs {
 		delete(s.readyToRunJobs, jobId)
 		s.runningJobs[jobId] = member
 		return &jobId, s.jobIdToInfo[jobId]
 	}
 	return nil, nil
+}
+
+func (s *State) returnFailedToLaunchJob(jobId JobId) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.readyToRunJobs[jobId] = member
+	delete(s.runningJobs, jobId)
 }
 
 func (s *State) completeJob(jobId JobId, jobResult JobResult) {
