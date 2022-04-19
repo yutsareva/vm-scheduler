@@ -4,16 +4,16 @@ import "time"
 
 
 type Config struct {
-	pollInterval time.Duration
-	jobLaunchInterval time.Duration
-	vmId uint64
+	PollInterval      time.Duration
+	JobLaunchInterval time.Duration
+	VmId              uint64
 }
 
 func getConfig() Config {
 	return Config {
-		pollInterval: 60 * time.Second,
-		jobLaunchInterval: 5 * time.Second,
-		vmId: 12345, // TODO
+		PollInterval:      60 * time.Second,
+		JobLaunchInterval: 5 * time.Second,
+		VmId:              12345, // TODO
 	}
 }
 

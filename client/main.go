@@ -3,10 +3,13 @@ package agent_api
 import (
     "google.golang.org/grpc"
     "google.golang.org/grpc/grpclog"
+    "log"
+    "scheduler/poller"
     pb_api "scheduler/services"
 )
 
 func main() {
+        log.SetFlags(log.LstdFlags)
         opts := []grpc.DialOption{
             grpc.WithInsecure(),
         }
@@ -24,7 +27,7 @@ func main() {
         config := getConfig()
         state := State{}
 
-        pollChan := pollSchedulerForAssignments(client, &config, &state)
+        pollChan := poller.PollSchedulerForAssignments(client, &config, &state)
 
         // ...
 

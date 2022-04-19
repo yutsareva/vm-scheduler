@@ -7,15 +7,15 @@ import(
 type JobId uint64
 
 type JobLimits struct {
-	cpu uint32
-	ram uint32
+	Cpu uint32
+	Ram uint32
 }
 
 type JobInfo struct {
-	imageVersion string
-	limits JobLimits
-	taskSettings string
-	jobOptions string
+	ImageVersion string
+	Limits       JobLimits
+	TaskSettings string
+	JobOptions   string
 }
 
 type JobResult struct {
@@ -38,7 +38,7 @@ type State struct {
 	jobIdToInfo map[JobId]*JobInfo
 }
 
-func (s *State) addAssignedJobs(jobIds []JobId) {
+func (s *State) AddAssignedJobs(jobIds []JobId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -49,7 +49,7 @@ func (s *State) addAssignedJobs(jobIds []JobId) {
 	}
 }
 
-func (s *State) getJobsForInfo() []JobId {
+func (s *State) GetJobsForInfo() []JobId {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (s *State) getJobsForInfo() []JobId {
 	return keys
 }
 
-func (s *State) updateJobInfos(id JobId, info *JobInfo) {
+func (s *State) UpdateJobInfos(id JobId, info *JobInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -72,7 +72,7 @@ func (s *State) updateJobInfos(id JobId, info *JobInfo) {
 	s.readyToRunJobs[id] = member
 }
 
-func (s *State) addCancelledJobs(jobIds []JobId) {
+func (s *State) AddCancelledJobs(jobIds []JobId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -91,7 +91,7 @@ func (s *State) cancelJobs(jobIds []JobId) {
 	}
 }
 
-func (s *State) getReadyToRunJob() (*JobId, *JobInfo) {
+func (s *State) GetReadyToRunJob() (*JobId, *JobInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -104,7 +104,7 @@ func (s *State) getReadyToRunJob() (*JobId, *JobInfo) {
 	return nil, nil
 }
 
-func (s *State) returnFailedToLaunchJob(jobId JobId) {
+func (s *State) ReturnFailedToLaunchJob(jobId JobId) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

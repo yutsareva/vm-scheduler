@@ -1,12 +1,11 @@
-package agent_api
+package s3_utils
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	//"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"log"
 	"os"
 )
 
@@ -40,29 +39,32 @@ func (s *S3Manager) session() (*session.Session, error) {
 	})
 }
 
-func (s *S3Manager) uploadFileToS3(fileName *string, key *string) error {
+func (s *S3Manager) UploadFileToS3(fileName *string, key *string) (*string, error) {
 	file, err := os.Open(*fileName)
 	if err != nil {
-		return err
+		log.Printf("Unable to read file %q: %v", fileName, err)
+		return nil, err
 	}
 	defer file.Close()
 
 	session, err := s.session()
 	if err != nil {
-		return err
+		log.Printf("Unable to create session to upload %q to %q, %v", key, s.config.bucket, err)
+		return nil, err
 	}
 
 	uploader := s3manager.NewUploader(session)
 
-	_, err = uploader.Upload(&s3manager.UploadInput{
+	output, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(s.config.bucket),
 		Key: aws.String(*key),
 		Body: file,
 	})
 	if err != nil {
-		// TODO ("Unable to upload %q to %q, %v", filename, bucket, err)
+		log.Printf("Unable to upload %q to %q, %v", key, s.config.bucket, err)
+		return nil, err
 	}
 
-	fmt.Printf("Successfully uploaded %q to %q\n", key, s.config.bucket)
-	return nil
+	log.Printf("Successfully uploaded %q to %q", key, s.config.bucket)
+	return &output.Location, nil
 }
