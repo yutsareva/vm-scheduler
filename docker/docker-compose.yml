@@ -12,7 +12,7 @@ services:
   scheduler:
     build:
       context: ../
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./docker/server.Dockerfile
     depends_on:
       - db
     ports:
@@ -25,6 +25,15 @@ services:
       PG_POOL_SIZE: 10
       AWS_EC2_ACCESS_KEY_ID: 123
       AWS_EC2_SECRET_KEY: 456
+  client:
+    build:
+      context: ../
+      dockerfile: ./docker/client.Dockerfile
+    depends_on:
+      - scheduler
+    environment:
+      VMS_AGENT_ID: 1
+      VMS_AGENT_SCHEDULER_ADDRESS: scheduler:50001
 # Uncomment these lines to persist data on the local filesystem.
 #   environment:
 #     - PGDATA=/var/lib/postgresql/data/pgdata
