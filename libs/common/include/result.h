@@ -26,7 +26,7 @@ public:
 
     static Result Failure(const std::string& errorString)
     {
-        return {std::make_exception_ptr(RuntimeException(errorString))};
+        return Result{std::make_exception_ptr(RuntimeException(errorString))};
     }
 
     bool IsFailure() const { return std::holds_alternative<std::exception_ptr>(result_); }

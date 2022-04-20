@@ -15,21 +15,22 @@ struct AwsVmInfo {
 
 class AwsCloudClient : public CloudClient {
 public:
-    AwsCloudClient(AwsEc2Config config = createEc2Config());
+    AwsCloudClient(const AwsClientConfig& config = createAwsClientConfig());
     ~AwsCloudClient();
 
     Result<AllocatedVmInfo> allocate(const SlotCapacity& slot) noexcept override;
     Result<void> terminate(const TerminationPendingVmInfo& vmInfo) noexcept override;
 
 private:
-    Result<AwsVmInfo> allocate(const Aws::EC2::Model::InstanceType& vmType);
-    Result<AwsVmInfo> createInstance(const Aws::EC2::Model::InstanceType& vmType);
-    Result<void> startInstance(const AwsVmInfo& vmInfo);
-    Result<void> terminate(const CloudVmId& cloudVmId);
+    Result<AwsVmInfo> allocate(const Aws::EC2::Model::InstanceType& vmType) noexcept;
+    Result<AwsVmInfo> createInstance(const Aws::EC2::Model::InstanceType& vmType) noexcept;
+    Result<void> startInstance(const AwsVmInfo& vmInfo) noexcept;
+    Result<void> terminate(const CloudVmId& cloudVmId) noexcept;
+    Aws::EC2::Model::InstanceType instanceTypeForSlot(const SlotCapacity& slot) noexcept;
 
 private:
-    AwsEc2Config config_;
     std::unique_ptr<Aws::EC2::EC2Client> client_;
+    AwsInstancesConfig vmConfig_;
     Aws::SDKOptions options_;
 };
 } // namespace vm_scheduler
