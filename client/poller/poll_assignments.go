@@ -1,36 +1,35 @@
 package poller
 
 import (
-	pb_api "scheduler/services"
+	"scheduler/registry"
 	"time"
-	agent_api "scheduler"
 )
 
 type JobAssignments struct {
-	assignedJobIds []agent_api.JobId
-	cancelledJobIds []agent_api.JobId
+	assignedJobIds []registry.JobId
+	cancelledJobIds []registry.JobId
 }
 
 func PollSchedulerForAssignments(
-		client pb_api.AgentApiSchedulerClient, config *agent_api.Config, state *agent_api.State) chan struct{} {
-	ticker := time.NewTicker(config.PollInterval)
+		registry *registry.Registry) chan struct{} {
+	ticker := time.NewTicker(registry.Config.PollInterval)
 	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case <- ticker.C:
-				assignments := getAssignments(config.VmId, client)
+				assignments := getAssignments(registry.Config.VmId, registry.Client)
 				if len(assignments.cancelledJobIds) > 0 {
-					state.AddCancelledJobs(assignments.cancelledJobIds)
+					registry.State.AddCancelledJobs(assignments.cancelledJobIds)
 				}
 				if len(assignments.assignedJobIds) > 0 {
-					state.AddAssignedJobs(assignments.assignedJobIds)
+					registry.State.AddAssignedJobs(assignments.assignedJobIds)
 				}
-				assignedJobs := state.GetJobsForInfo()
+				assignedJobs := registry.State.GetJobsForInfo()
 				for _, jobId := range assignedJobs {
-					maybeJobInfo := getAssignedJobInfo(client, config.VmId, uint64(jobId))
+					maybeJobInfo := getAssignedJobInfo(registry.Client, registry.Config.VmId, uint64(jobId))
 					if maybeJobInfo != nil {
-						state.UpdateJobInfos(jobId, maybeJobInfo)
+						registry.State.UpdateJobInfos(jobId, maybeJobInfo)
 					}
 				}
 			case <- quit:

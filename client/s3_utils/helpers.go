@@ -31,6 +31,12 @@ type S3Manager struct {
 	config S3Config
 }
 
+func CreateS3Manager() S3Manager {
+	return S3Manager{
+		config: getS3Config(),
+	}
+}
+
 func (s *S3Manager) session() (*session.Session, error) {
 	return session.NewSession(&aws.Config{
 		Region: aws.String(s.config.region),

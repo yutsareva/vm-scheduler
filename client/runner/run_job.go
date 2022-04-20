@@ -4,122 +4,78 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"log"
-	agent_api "scheduler"
 	"scheduler/docker_utils"
-	"scheduler/s3_utils"
-	pb_api "scheduler/services"
+	"scheduler/registry"
 	pb "scheduler/structures"
 	"time"
 )
 
 
 func handleContainerCompletion(
-		ctx context.Context, cli *client.Client, containerId *string, client pb_api.AgentApiSchedulerClient,
-		jobId uint64, vmId uint64, resultFileName *string, s3Manager *s3_utils.S3Manager) {
-	statusCh, errCh := cli.ContainerWait(ctx, *containerId, container.WaitConditionNotRunning)
+		ctx context.Context, registry *registry.Registry, containerId *string,
+		jobId uint64, resultFileName *string) {
+	statusCh, errCh := registry.DockerClient.ContainerWait(ctx, *containerId, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
 		if err != nil {
 			status := pb.JobStatus_JOB_FAILED
-			protoExecutionJobState := &pb.ExecutionJobState{
-				JobId: &pb.JobId{
-					Value: &jobId,
-				},
-				VmId: &pb.VmId{
-					Value: &vmId,
-				},
-				JobResult: &pb.JobExecutionResult{
-					Status: &status,
-				},
-			}
-			_, err := client.UpdateJobState(ctx, protoExecutionJobState)
-			if err != nil {
-				log.Printf("Failed to update job state for job %d: %v", jobId, err)
-			}
-			return
+			updateJobState(ctx, status, nil, jobId, registry.Config.VmId, registry.Client)
 		}
 	case <-statusCh:
 		status := pb.JobStatus_JOB_COMPLETED
-
 		key := resultFileName // TODO: key
-		resultUrl, err := s3Manager.UploadFileToS3(resultFileName, key)
-
-		protoExecutionJobState := &pb.ExecutionJobState{
-			JobId: &pb.JobId{
-				Value: &jobId,
-			},
-			VmId: &pb.VmId{
-				Value: &vmId,
-			},
-			JobResult: &pb.JobExecutionResult{
-				Status: &status,
-				ResultUrl: resultUrl,
-			},
-		}
-		_, err = client.UpdateJobState(ctx, protoExecutionJobState)
+		resultUrl, err := registry.S3Manger.UploadFileToS3(resultFileName, key)
 		if err != nil {
-			log.Printf("Failed to update job state for job %d: %v", jobId, err)
+			log.Printf("Failed to upload result to s3 %d: %v", jobId, err)
+			return
 		}
-		return
+		updateJobState(ctx, status, resultUrl, jobId, registry.Config.VmId, registry.Client)
 	}
 }
 
-func runJobContainer(jobId agent_api.JobId, jobInfo *agent_api.JobInfo) (*string, error) {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return nil, err
-	}
-
+func runJobContainer(jobId registry.JobId, jobInfo *registry.JobInfo, registry *registry.Registry) error {
 	jobName := fmt.Sprintf("job-%d", jobId)
 
 	ctx := context.Background()
-	err = docker_utils.PullImage(ctx, cli, &jobInfo.ImageVersion)
+	err := docker_utils.PullImage(ctx, registry.DockerClient, &jobInfo.ImageVersion)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	containerId, err := docker_utils.CreateContainer(ctx, cli, &jobName, &jobInfo.ImageVersion)
+	containerId, err := docker_utils.CreateContainer(ctx, registry.DockerClient, &jobName, &jobInfo.ImageVersion)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = docker_utils.StartContainer(ctx, cli, containerId)
+	err = docker_utils.StartContainer(ctx, registry.DockerClient, containerId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	//go handleContainerCompletion(ctx, cli, containerId)
+	resultFile := "/"+jobName+"/result.json"
+	go handleContainerCompletion(ctx, registry, containerId, uint64(jobId), &resultFile)
 
-	return containerId, nil
+	return nil
 }
 
 func runJobs(
-	client pb_api.AgentApiSchedulerClient, config *agent_api.Config, state *agent_api.State, s3Manager *s3_utils.S3Manager) chan struct{} {
-	ticker := time.NewTicker(config.JobLaunchInterval)
+	registry *registry.Registry) chan struct{} {
+	ticker := time.NewTicker(registry.Config.JobLaunchInterval)
 	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case <- ticker.C:
-				jobId, jobInfo := state.GetReadyToRunJob()
+				jobId, jobInfo := registry.State.GetReadyToRunJob()
 				if jobId == nil {
 					continue
 				}
-				containerId, err := runJobContainer(*jobId, jobInfo)
+				err := runJobContainer(*jobId, jobInfo, registry)
 				if err != nil {
-					state.ReturnFailedToLaunchJob(*jobId)
+					log.Printf("Failed to run container: %v", err)
+					registry.State.ReturnFailedToLaunchJob(*jobId)
 				}
-				//cli, err := client.NewEnvClient()
-				//if err != nil {
-				//	return nil, err
-				//}
-				//
-				//jobName := fmt.Sprintf("job-%d", jobId)
-				//
-				ctx := context.Background()
-				handleContainerCompletion(ctx, cli, containerId, client, uint64(*jobId), config.VmId, s3Manager)
 			case <- quit:
 				ticker.Stop()
 				return

@@ -1,4 +1,4 @@
-package agent_api
+package registry
 
 import(
 	"sync"

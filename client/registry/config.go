@@ -1,4 +1,4 @@
-package agent_api
+package registry
 
 import "time"
 
@@ -10,7 +10,7 @@ type Config struct {
 }
 
 func getConfig() Config {
-	return Config {
+	return Config{
 		PollInterval:      60 * time.Second,
 		JobLaunchInterval: 5 * time.Second,
 		VmId:              12345, // TODO

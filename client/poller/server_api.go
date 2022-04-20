@@ -3,7 +3,7 @@ package poller
 import (
 	"context"
 	"google.golang.org/grpc/grpclog"
-	agent_api "scheduler"
+	agent_api "scheduler/registry"
 	pb_api "scheduler/services"
 	pb "scheduler/structures"
 )
