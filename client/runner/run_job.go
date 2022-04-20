@@ -58,7 +58,7 @@ func runJobContainer(jobId registry.JobId, jobInfo *registry.JobInfo, registry *
 	return nil
 }
 
-func runJobs(
+func RunJobs(
 	registry *registry.Registry) chan struct{} {
 	ticker := time.NewTicker(registry.Config.JobLaunchInterval)
 	quit := make(chan struct{})

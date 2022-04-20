@@ -5,6 +5,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 	"log"
+	"os"
 	"scheduler/s3_utils"
 	pb_api "scheduler/services"
 )
@@ -28,7 +29,8 @@ func CreateRegistry() *Registry {
 		grpc.WithInsecure(),
 	}
 	//args := os.Args
-	conn, err := grpc.Dial("127.0.0.1:50002", opts...)
+	grpcServerAddress := os.Getenv("VMS_AGENT_SCHEDULER_ADDRESS")
+	conn, err := grpc.Dial(grpcServerAddress, opts...)
 
 	if err != nil {
 		grpclog.Fatalf("fail to dial: %v", err)
