@@ -10,20 +10,20 @@ import (
 )
 
 type S3Config struct {
-	accessKeyId string
+	accessKeyId     string
 	secretAccessKey string
-	sessionToken string
-	region string
-	bucket string
+	sessionToken    string
+	region          string
+	bucket          string
 }
 
 func getS3Config() S3Config {
 	return S3Config{
-		accessKeyId: os.Getenv("VMS_AGENT_AWS_ACCESS_KEY_ID"),
+		accessKeyId:     os.Getenv("VMS_AGENT_AWS_ACCESS_KEY_ID"),
 		secretAccessKey: os.Getenv("VMS_AGENT_AWS_SECRET_ACCESS_KEY"),
-		region: os.Getenv("VMS_AGENT_AWS_REGION"),
-		bucket: os.Getenv("VMS_AGENT_AWS_BUCKET"),
-		sessionToken: "",
+		region:          os.Getenv("VMS_AGENT_AWS_REGION"),
+		bucket:          os.Getenv("VMS_AGENT_AWS_BUCKET"),
+		sessionToken:    "",
 	}
 }
 
@@ -63,8 +63,8 @@ func (s *S3Manager) UploadFileToS3(fileName *string, key *string) (*string, erro
 
 	output, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(s.config.bucket),
-		Key: aws.String(*key),
-		Body: file,
+		Key:    aws.String(*key),
+		Body:   file,
 	})
 	if err != nil {
 		log.Printf("Unable to upload %q to %q, %v", key, s.config.bucket, err)

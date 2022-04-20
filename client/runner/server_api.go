@@ -17,7 +17,7 @@ func updateJobState(
 			Value: &vmId,
 		},
 		JobResult: &pb.JobExecutionResult{
-			Status: &status,
+			Status:    &status,
 			ResultUrl: resultUrl,
 		},
 	}

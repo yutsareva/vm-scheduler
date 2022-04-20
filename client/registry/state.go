@@ -1,6 +1,6 @@
 package registry
 
-import(
+import (
 	"sync"
 )
 
@@ -24,16 +24,17 @@ type JobResult struct {
 }
 
 type void struct{}
+
 var member void
 
 type State struct {
-	mu       sync.Mutex
+	mu sync.Mutex
 
-	assignedJobs map[JobId]void
+	assignedJobs   map[JobId]void
 	readyToRunJobs map[JobId]void
-	cancelledJobs map[JobId]void
-	runningJobs map[JobId]void
-	completedJobs map[JobId]JobResult
+	cancelledJobs  map[JobId]void
+	runningJobs    map[JobId]void
+	completedJobs  map[JobId]JobResult
 
 	jobIdToInfo map[JobId]*JobInfo
 }
@@ -127,4 +128,3 @@ func (s *State) removeJob(jobId JobId) {
 	delete(s.completedJobs, jobId)
 	delete(s.jobIdToInfo, jobId)
 }
-

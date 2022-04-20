@@ -1,21 +1,21 @@
 package agent_api
 
 import (
-    "log"
-    "scheduler/poller"
-    registry2 "scheduler/registry"
+	"log"
+	"scheduler/poller"
+	registry2 "scheduler/registry"
 )
 
 func main() {
-        log.SetFlags(log.LstdFlags)
+	log.SetFlags(log.LstdFlags)
 
-        registry := registry2.createRegistry()
+	registry := registry2.CreateRegistry()
 
-        pollChan := poller.PollSchedulerForAssignments(registry)
+	pollChan := poller.PollSchedulerForAssignments(registry)
 
-        // ...
+	// ...
 
-        close(pollChan)
+	close(pollChan)
 
-        registry.close()
+	registry.Close()
 }

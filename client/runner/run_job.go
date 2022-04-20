@@ -11,10 +11,9 @@ import (
 	"time"
 )
 
-
 func handleContainerCompletion(
-		ctx context.Context, registry *registry.Registry, containerId *string,
-		jobId uint64, resultFileName *string) {
+	ctx context.Context, registry *registry.Registry, containerId *string,
+	jobId uint64, resultFileName *string) {
 	statusCh, errCh := registry.DockerClient.ContainerWait(ctx, *containerId, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
@@ -53,7 +52,7 @@ func runJobContainer(jobId registry.JobId, jobInfo *registry.JobInfo, registry *
 		return err
 	}
 
-	resultFile := "/"+jobName+"/result.json"
+	resultFile := "/" + jobName + "/result.json"
 	go handleContainerCompletion(ctx, registry, containerId, uint64(jobId), &resultFile)
 
 	return nil
@@ -66,7 +65,7 @@ func runJobs(
 	go func() {
 		for {
 			select {
-			case <- ticker.C:
+			case <-ticker.C:
 				jobId, jobInfo := registry.State.GetReadyToRunJob()
 				if jobId == nil {
 					continue
@@ -76,7 +75,7 @@ func runJobs(
 					log.Printf("Failed to run container: %v", err)
 					registry.State.ReturnFailedToLaunchJob(*jobId)
 				}
-			case <- quit:
+			case <-quit:
 				ticker.Stop()
 				return
 			}

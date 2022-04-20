@@ -2,7 +2,6 @@ package registry
 
 import "time"
 
-
 type Config struct {
 	PollInterval      time.Duration
 	JobLaunchInterval time.Duration
@@ -16,5 +15,3 @@ func getConfig() Config {
 		VmId:              12345, // TODO
 	}
 }
-
-

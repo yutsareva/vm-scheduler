@@ -5,26 +5,25 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 	"log"
-	"scheduler"
 	"scheduler/s3_utils"
 	pb_api "scheduler/services"
 )
 
 type Registry struct {
-	Config Config
-	State  State
-	S3Manger s3_utils.S3Manager
-	Client pb_api.AgentApiSchedulerClient
+	Config       Config
+	State        State
+	S3Manger     s3_utils.S3Manager
+	Client       pb_api.AgentApiSchedulerClient
 	DockerClient *docker_client.Client
 
-	conn   *grpc.ClientConn
+	conn *grpc.ClientConn
 }
 
-func (r *Registry) close() {
+func (r *Registry) Close() {
 	r.conn.Close()
 }
 
-func createRegistry() *Registry {
+func CreateRegistry() *Registry {
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
@@ -41,7 +40,7 @@ func createRegistry() *Registry {
 	}
 
 	return &Registry{
-		Config:       agent_api.getConfig(),
+		Config:       getConfig(),
 		State:        State{},
 		S3Manger:     s3_utils.CreateS3Manager(),
 		Client:       pb_api.NewAgentApiSchedulerClient(conn),

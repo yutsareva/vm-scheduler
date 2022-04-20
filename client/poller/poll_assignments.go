@@ -6,18 +6,18 @@ import (
 )
 
 type JobAssignments struct {
-	assignedJobIds []registry.JobId
+	assignedJobIds  []registry.JobId
 	cancelledJobIds []registry.JobId
 }
 
 func PollSchedulerForAssignments(
-		registry *registry.Registry) chan struct{} {
+	registry *registry.Registry) chan struct{} {
 	ticker := time.NewTicker(registry.Config.PollInterval)
 	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
-			case <- ticker.C:
+			case <-ticker.C:
 				assignments := getAssignments(registry.Config.VmId, registry.Client)
 				if len(assignments.cancelledJobIds) > 0 {
 					registry.State.AddCancelledJobs(assignments.cancelledJobIds)
@@ -32,7 +32,7 @@ func PollSchedulerForAssignments(
 						registry.State.UpdateJobInfos(jobId, maybeJobInfo)
 					}
 				}
-			case <- quit:
+			case <-quit:
 				ticker.Stop()
 				return
 			}
@@ -41,6 +41,3 @@ func PollSchedulerForAssignments(
 
 	return quit
 }
-
-
-

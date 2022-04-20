@@ -22,23 +22,23 @@ func PullImage(ctx context.Context, cli *client.Client, image *string) error {
 
 func CreateContainer(ctx context.Context, cli *client.Client, jobName *string, imageVersion *string) (*string, error) {
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image:        *imageVersion,
+		Image: *imageVersion,
 		//Volumes: map[string]struct{}{jobName{}},
-		Cmd:   []string{
+		Cmd: []string{
 			"--setting", "/task/settings.json",
 			"--job-options", "/task/job_options.json",
 			"--output", "/task/result.json",
 		},
 	},
-	&container.HostConfig{
-		Mounts: []mount.Mount{
-			{
-				Type:   mount.TypeBind,
-				Source: "/"+*jobName,
-				Target: "/task",
+		&container.HostConfig{
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: "/" + *jobName,
+					Target: "/task",
+				},
 			},
-		},
-	}, nil, nil, *jobName)
+		}, nil, nil, *jobName)
 	if err != nil {
 		return nil, err
 	}
