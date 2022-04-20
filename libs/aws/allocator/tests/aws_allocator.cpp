@@ -1,4 +1,3 @@
-/*
 #include "libs/aws/allocator/include/cloud_client.h"
 
 #include <libs/common/include/log.h>
@@ -36,4 +35,3 @@ TEST(aws_allocator, simple) {
     const auto terminated = client.terminate(vmInfo);
     ASSERT_TRUE(terminated.IsSuccess());
 }
-*/

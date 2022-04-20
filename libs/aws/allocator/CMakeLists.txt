@@ -1,7 +1,7 @@
 get_filename_component(LIB_INCLUDE_PATH "../../.." ABSOLUTE)
 get_filename_component(LIB_PATH "." ABSOLUTE)
 
-file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/*.cpp)
+file(GLOB_RECURSE LIB_CXX_SOURCES ${LIB_PATH}/impl/*.cpp)
 
 find_package(AWSSDK CONFIG COMPONENTS ec2 core dynamodb kinesis s3 REQUIRED)
 find_package(ZLIB)
