@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 
 namespace vm_scheduler {
@@ -17,6 +18,20 @@ const char* toString(VmStatus v)
         case VmStatus::Terminating : return "terminating";
         case VmStatus::Terminated : return "terminated";
     };
+}
+
+VmStatus vmStatusFromString(const std::string& s)
+{
+    const static std::unordered_map<std::string, VmStatus> map = {
+        {"pending_allocation", VmStatus::PendingAllocation},
+        {"allocating", VmStatus::Allocating},
+        {"allocated", VmStatus::Allocated},
+        {"agent_started", VmStatus::AgentStarted},
+        {"pending_termination", VmStatus::PendingTermination},
+        {"terminating", VmStatus::Terminating},
+        {"terminated", VmStatus::Terminated},
+    };
+    return map.at(s);
 }
 
 const std::vector<VmStatus>& getActiveVmStatuses()

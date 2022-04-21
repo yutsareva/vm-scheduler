@@ -44,6 +44,7 @@ enum class VmStatus {
 };
 
 const char* toString(VmStatus v);
+VmStatus vmStatusFromString(const std::string& s);
 
 struct ActiveVm { // status: pending_allocation or allocated
     VmId id;
