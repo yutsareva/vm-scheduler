@@ -26,7 +26,7 @@ private:
     Result<AwsVmInfo> createInstance(const Aws::EC2::Model::InstanceType& vmType) noexcept;
     Result<void> startInstance(const AwsVmInfo& vmInfo) noexcept;
     Result<void> terminate(const CloudVmId& cloudVmId) noexcept;
-    Aws::EC2::Model::InstanceType instanceTypeForSlot(const SlotCapacity& slot) noexcept;
+    Aws::EC2::Model::InstanceType instanceTypeForSlot(const SlotCapacity& slot) noexcept const;
 
 private:
     std::unique_ptr<Aws::EC2::EC2Client> client_;

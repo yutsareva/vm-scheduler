@@ -75,7 +75,7 @@ std::vector<T> extractIds(const pqxx::result& pgResult)
         pgResult.begin(),
         pgResult.end(),
         std::back_inserter(ids),
-        [](const pqxx::row row) -> T { return row.at("id").as<T>(); });
+        [](const pqxx::row& row) -> T { return row.at("id").as<T>(); });
     return ids;
 }
 

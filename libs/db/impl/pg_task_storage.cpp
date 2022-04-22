@@ -92,7 +92,7 @@ Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters)
         std::vector<JobId> jobIds;
         jobIds.reserve(addedJobs.size());
         std::transform(addedJobs.begin(), addedJobs.end(), std::back_inserter(jobIds),
-                       [](const pqxx::row row) -> JobId { return row.at("id").as<JobId>(); });
+                       [](const pqxx::row& row) -> JobId { return row.at("id").as<JobId>(); });
         return Result{CreatedJobs{
             .taskId = taskId,
             .jobIds = std::move(jobIds),
@@ -911,7 +911,7 @@ Result<void> PgTaskStorage::updateJobState(
                 "Job with id '", jobId, "' assigned for VM with id '", vmId, "' was cancelled."));
         }
 
-        const auto finalJobStatuses = getFinalJobStatuses();
+        const auto& finalJobStatuses = getFinalJobStatuses();
         const auto updateStatement
             = finalJobStatuses.contains(jobState.status)
                   ? "finished = NOW() "
