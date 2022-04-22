@@ -137,7 +137,7 @@ TEST(Allocation, allocate)
             .id = vmId,
             .capacity = {
                 .cpu = 2_cores,
-                .ram = 20_MB,
+                .ram = 2048_MB,
             },
         },
     };

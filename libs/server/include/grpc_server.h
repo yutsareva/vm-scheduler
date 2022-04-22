@@ -12,7 +12,7 @@ namespace vm_scheduler {
 
 class GrpcServer {
 public:
-    GrpcServer(ServerConfig config, TaskStorage* taskStorage);
+    GrpcServer(const ServerConfig& config, TaskStorage* taskStorage);
 
     friend class AgentApiSchedulerService;
     friend class PublicApiSchedulerService;

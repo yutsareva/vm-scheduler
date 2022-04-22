@@ -6,7 +6,7 @@
 
 namespace vm_scheduler {
 
-GrpcServer::GrpcServer(ServerConfig config, TaskStorage* taskStorage)
+GrpcServer::GrpcServer(const ServerConfig& config, TaskStorage* taskStorage)
     : taskStorage_(taskStorage), publicApiSchedulerService_(*this), agentApiSchedulerService_(*this)
 {
     grpc::ServerBuilder builder;

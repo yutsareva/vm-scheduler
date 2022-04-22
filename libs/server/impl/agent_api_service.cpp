@@ -110,7 +110,7 @@ grpc::Status AgentApiSchedulerService::updateJobState(
     grpc::ServerContext*, const proto::ExecutionJobState* protoExecutionJobState, google::protobuf::Empty*)
 {
     const auto jobState = protoExecutionJobStateToJobState(*protoExecutionJobState);
-    const auto allowedForUpdateStatuses = getAllowedAgentUpdateJobStatuses();
+    const auto& allowedForUpdateStatuses = getAllowedAgentUpdateJobStatuses();
     if (!allowedForUpdateStatuses.contains(jobState.status)) {
         return grpc::Status(
             grpc::StatusCode::INVALID_ARGUMENT,

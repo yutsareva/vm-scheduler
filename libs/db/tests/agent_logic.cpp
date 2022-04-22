@@ -73,13 +73,23 @@ TEST(AgentLogic, fullScenario)
     const auto jobInfoQuery = toString(
         "SELECT started, finished, status, result_url FROM scheduler.jobs WHERE id = ",
         assignedJobs.ValueRefOrThrow()[0].id, ";");
+    const auto vmInfoQuery = toString(
+        "SELECT cpu, cpu_idle, ram, ram_idle FROM scheduler.vms WHERE id = ", vmId, ";");
+
     auto readTxn = pool.readOnlyTransaction();
+
     {
         const auto jobInfo = pg::execQuery(jobInfoQuery, *readTxn);
         EXPECT_EQ(jobStatusFromString(jobInfo[0].at("status").as<std::string>()), JobStatus::Running);
         EXPECT_TRUE(jobInfo[0].at("started").as<std::optional<std::string>>());
         EXPECT_TRUE(!jobInfo[0].at("finished").as<std::optional<std::string>>());
         EXPECT_TRUE(!jobInfo[0].at("result_url").as<std::optional<std::string>>());
+
+        const auto vmInfo = pg::execQuery(vmInfoQuery, *readTxn);
+        EXPECT_EQ(vmInfo[0].at("cpu").as<std::optional<size_t>>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<std::optional<size_t>>(), 1u);
+        EXPECT_EQ(vmInfo[0].at("ram").as<std::optional<size_t>>(), 2048u);
+        EXPECT_EQ(vmInfo[0].at("ram_idle").as<std::optional<size_t>>(), 1024u);
     }
 
     const auto finishJobResult = pgTaskStorage.updateJobState(
@@ -91,6 +101,12 @@ TEST(AgentLogic, fullScenario)
         EXPECT_TRUE(jobInfo[0].at("started").as<std::optional<std::string>>());
         EXPECT_TRUE(jobInfo[0].at("finished").as<std::optional<std::string>>());
         EXPECT_TRUE(jobInfo[0].at("result_url").as<std::optional<std::string>>());
+
+        const auto vmInfo = pg::execQuery(vmInfoQuery, *readTxn);
+        EXPECT_EQ(vmInfo[0].at("cpu").as<std::optional<size_t>>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<std::optional<size_t>>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("ram").as<std::optional<size_t>>(), 2048u);
+        EXPECT_EQ(vmInfo[0].at("ram_idle").as<std::optional<size_t>>(), 2048u);
     }
 }
 

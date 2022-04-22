@@ -926,7 +926,19 @@ Result<void> PgTaskStorage::updateJobState(
             "status NOT IN ", pg::asFormattedList(finalJobStatuses),
             ";");
 
-        const auto updateResult = pg::execQuery(updateJobQuery, *txn);
+        pg::execQuery(updateJobQuery, *txn);
+        if (finalJobStatuses.contains(jobState.status)) {
+            const auto updateVmIdleCapcity = toString(
+                "UPDATE scheduler.vms AS v "
+                    "SET cpu_idle = cpu_idle + j.cpu, "
+                    "ram_idle = ram_idle + j.ram "
+                "FROM scheduler.jobs AS j "
+                "WHERE v.id = j.vm_id "
+                    "AND j.id = ", jobId, " "
+                    "AND j.vm_id = ", vmId, ";"
+            );
+            pg::execQuery(updateVmIdleCapcity, *txn);
+        }
         txn->commit();
         return Result<void>::Success();
     } catch (const std::exception& ex) {

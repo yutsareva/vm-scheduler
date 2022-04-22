@@ -53,7 +53,7 @@ VmId insertVm(pg::PgPool& pool, const VmStatus status)
         "(status, created, cpu, ram, cpu_idle, ram_idle, cloud_vm_id, cloud_vm_type, last_status_update) ",
         "VALUES('",
         toString(status),
-        "', NOW(), 2, 20, 1, 10, 'cloud vm id', 'cloud vm type', NOW()) "
+        "', NOW(), 2, 2048, 1, 1024, 'cloud vm id', 'cloud vm type', NOW()) "
         "RETURNING id;");
     const auto vmResult = pg::execQuery(insertVmQuery, *writeTxn);
     writeTxn->commit();
