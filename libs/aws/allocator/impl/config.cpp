@@ -9,7 +9,7 @@ namespace vm_scheduler {
 namespace {
 
 const std::string DEFAULT_AWS_EC2_AMI_ID = "ami-02a92e06fd643c11b";
-const std::string DEFAULT_AWS_INSTANCE_CLASS = "c6g";
+const std::string DEFAULT_AWS_INSTANCE_CLASS = "c6g.";
 
 } // anonymous namespace
 
