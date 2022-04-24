@@ -1,0 +1,26 @@
+@startuml
+[*] -[bold]> PendingAllocation
+PendingAllocation : initial status
+PendingAllocation : after VM creation
+PendingAllocation : by Scheduler
+PendingAllocation -[bold]down> Allocating
+Allocating: a worker is trying\nto allocate the VM\nvia AWS SDK calls
+Allocating -[bold]> Allocated
+Allocated: AWS SDK allocation calls\ncompleted successfully,\nwaiting for agent to start
+Allocated -[bold]> AgentStarted
+AgentStarted: agent started and\nis sending heartbeats
+AgentStarted -[bold]> PendingTermination
+AgentStarted -[dotted,#blue]> PendingTermination
+PendingTermination -[bold]down> Terminating
+Allocating -> Terminated
+Allocating -[dotted,#blue]> Terminated
+Allocating -[dotted,#blue]> PendingAllocation
+Allocating -> PendingAllocation
+Allocated -[dotted,#blue]> PendingTermination
+PendingTermination: scheduler decided\nto terminate\nthe VM
+Terminating: a worker is trying\nto terminate the VM\nvia AWS SDK calls
+Terminating -[bold]> Terminated
+Terminating -> PendingTermination
+Terminated: AWS SDK termination call\ncompleted successfully
+Terminated -[bold]> [*]
+@enduml

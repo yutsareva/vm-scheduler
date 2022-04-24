@@ -1,0 +1,41 @@
+@startuml
+[*] -[bold]down-> Queued
+Queued : initial status
+Queued : after task addition
+
+Queued -[bold]down-> Scheduled : scheduling
+Scheduled : VM is assigned
+Scheduled : for the job
+
+Queued -[dotted,#blue]-> Cancelled : FD
+Running -[dotted,#blue]-> Cancelling : FD
+Scheduled -[dotted,#blue]-> Cancelling : FD
+Queued -> Cancelled : user cancelled\nthe task
+Running -> Cancelling : user cancelled\nthe task
+Scheduled -> Cancelling : user cancelled\nthe task
+
+Scheduled -[bold]down-> Running : agent started\nthe job
+Running : the job is\nrunning on the VM
+Running -[bold]down-> Completed : job successfully\ncompleted
+
+Running -[dotted,#blue]-> Queued : FD
+Scheduled -[dotted,#blue]-> Queued : FD
+
+Running --> Error : container with\nthe job failed
+
+Running -[dotted,#blue]-> InternalError : FD
+Scheduled -[dotted,#blue]-> InternalError : FD
+
+Cancelling: task should
+Cancelling: be cancelled
+Cancelling -down-> Cancelled : agent cancelled\nthe job
+
+Completed -[bold]-> [*]
+Completed : job successfully\ncompleted
+Error -> [*]
+Error: client error
+InternalError -> [*]
+InternalError: scheduler\ninternal error
+Cancelled -down-> [*]
+Cancelled: the job is canclled by user\nor the job exceeded its time limit\n(detected by FD)
+@enduml

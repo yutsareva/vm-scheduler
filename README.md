@@ -1,10 +1,16 @@
 # Virtual machine scheduler (VMS)
 
-Classes diargam:
-![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/classes.txt)
+Classes diagram:
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/classes.puml)
 
 Sequence diagram:
-![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/workflow.txt)
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/workflow.puml)
+
+Job state diagram:
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/job_state.puml)
+
+VM state diagram:
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/vm_state.puml)
 
 <!---
 ## Scenario (TBD refine)
