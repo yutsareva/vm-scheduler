@@ -1,5 +1,12 @@
 # Virtual machine scheduler (VMS)
 
+Classes diargam:
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/classes.txt)
+
+Sequence diagram:
+![alternative text](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/workflow.txt)
+
+<!---
 ## Scenario (TBD refine)
 
 - Initialize VMS with AWS/Azure credentials to allocate VMs from his Amazon/Azure accounts.
@@ -75,3 +82,4 @@
 ## Code (-design/-style) rules
 - Clean architecture - any usage of db/storage/another service should be an interface
 - No exceptions are expected to be catched from library calls, Result<error, value> should be used
+-->
