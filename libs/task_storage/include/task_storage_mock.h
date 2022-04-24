@@ -59,6 +59,8 @@ public:
     MOCK_METHOD(Result<void>, updateJobState,
                 (const VmId vmId, const JobId jobId, const JobState& jobState),
                 (noexcept, override));
+    MOCK_METHOD(Result<AllocatedVmInfos>, getAllocatedVms,
+                (), (noexcept, override));
 };
 
 } // namespace vm_scheduler::testing

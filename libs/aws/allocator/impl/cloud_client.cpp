@@ -1,5 +1,7 @@
 #include "libs/aws/allocator/include/cloud_client.h"
+#include "libs/aws/allocator/impl/describe_instances.h"
 #include "libs/aws/allocator/impl/errors.h"
+#include "libs/aws/allocator/impl/helpers.h"
 #include "libs/aws/allocator/impl/select_instance_type.h"
 #include "libs/aws/allocator/include/config.h"
 
@@ -17,15 +19,6 @@
 namespace vm_scheduler {
 
 namespace {
-
-AllocatedVmInfo convertAwsVmInfoToVmInfo(const AwsVmInfo& awsVmInfo)
-{
-    return {
-        .id = awsVmInfo.id,
-        .type = Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(
-            awsVmInfo.type),
-    };
-}
 
 Aws::EC2::Model::Placement getPlacement()
 {
@@ -78,15 +71,16 @@ Aws::EC2::Model::InstanceType getInstanceTypeForSlot(
 }
 
 Aws::EC2::Model::InstanceType AwsCloudClient::instanceTypeForSlot(
-    const SlotCapacity& slot) noexcept
+    const SlotCapacity& slot) const noexcept
 {
     return getInstanceTypeForSlot(vmConfig_.vmTypes, slot);
 }
 
-Result<AllocatedVmInfo> AwsCloudClient::allocate(const SlotCapacity& slot) noexcept
+Result<AllocatedVmInfo> AwsCloudClient::allocate(
+    const VmId vmId, const SlotCapacity& slot) noexcept
 {
     const auto vmType = instanceTypeForSlot(slot);
-    auto result = allocate(vmType);
+    auto result = allocate(vmId, vmType);
     if (result.IsSuccess()) {
         return Result{convertAwsVmInfoToVmInfo(std::move(result).ValueOrThrow())};
     }
@@ -94,9 +88,10 @@ Result<AllocatedVmInfo> AwsCloudClient::allocate(const SlotCapacity& slot) noexc
 }
 
 Result<AwsVmInfo> AwsCloudClient::allocate(
-    const Aws::EC2::Model::InstanceType& vmType) noexcept
+    const VmId vmId, const Aws::EC2::Model::InstanceType& vmType) noexcept
 {
-    auto vmInfo = createInstance(vmType);
+    const auto vmToken = toString(vmConfig_.tokenPrefix, "-", vmId);
+    auto vmInfo = createInstance(vmToken, vmType);
     if (vmInfo.IsFailure()) {
         return vmInfo;
     }
@@ -122,15 +117,45 @@ Result<AwsVmInfo> AwsCloudClient::allocate(
     return vmInfo;
 }
 
-Result<AwsVmInfo> AwsCloudClient::createInstance(
-    const Aws::EC2::Model::InstanceType& vmType) noexcept
+namespace {
+
+Aws::EC2::Model::RunInstancesRequest createRunRequest(
+    const std::string& vmToken,
+    const Tags& tags,
+    const Aws::EC2::Model::InstanceType& vmType,
+    const std::string& amiId)
 {
-    Aws::EC2::Model::RunInstancesRequest runRequest;
-    runRequest.WithInstanceType(vmType)
+    Aws::EC2::Model::TagSpecification tagSpecs;
+    tagSpecs = tagSpecs.WithResourceType(Aws::EC2::Model::ResourceType::instance);
+
+    Aws::Vector<Aws::EC2::Model::Tag> awsTags;
+    for (const auto& [key, value]: tags) {
+        Aws::EC2::Model::Tag tag;
+        tag.WithKey(key).WithValue(value);
+        awsTags.emplace_back(std::move(tag));
+    }
+    tagSpecs.WithTags(awsTags);
+
+    Aws::EC2::Model::RunInstancesRequest request;
+    request.WithInstanceType(vmType)
         .WithPlacement(getPlacement())
-        .WithImageId(vmConfig_.amiId)
+        .WithImageId(amiId)
+        .WithTagSpecifications({tagSpecs})
+        .WithClientToken(vmToken) // for making allocation idempotent
         .WithMinCount(1)
         .WithMaxCount(1);
+
+    return request;
+}
+
+} // anonymous namespace
+
+Result<AwsVmInfo> AwsCloudClient::createInstance(
+    const std::string& vmToken,
+    const Aws::EC2::Model::InstanceType& vmType) noexcept
+{
+    const auto runRequest =
+        createRunRequest(vmToken, vmConfig_.vmTags, vmType, vmConfig_.amiId);
 
     const auto vmTypeName =
         Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(
@@ -183,11 +208,6 @@ Result<void> AwsCloudClient::startInstance(const AwsVmInfo& vmInfo) noexcept
         "Failed to start vm: ", vmInfo.id, ": ", result.GetError().GetMessage()));
 }
 
-Result<void> AwsCloudClient::terminate(const TerminationPendingVmInfo& vmInfo) noexcept
-{
-    return terminate(vmInfo.cloudVmId);
-}
-
 Result<void> AwsCloudClient::terminate(const CloudVmId& cloudVmId) noexcept
 {
     Aws::EC2::Model::TerminateInstancesRequest request;
@@ -203,6 +223,11 @@ Result<void> AwsCloudClient::terminate(const CloudVmId& cloudVmId) noexcept
         "Failed to terminate ec2 vm ",
         request.GetInstanceIds()[0],
         result.GetError().GetMessage()));
+}
+
+Result<AllocatedVmInfos> AwsCloudClient::getAllAllocatedVms() noexcept
+{
+    return describeInstances(*client_, vmConfig_.vmTags);
 }
 
 } // namespace vm_scheduler

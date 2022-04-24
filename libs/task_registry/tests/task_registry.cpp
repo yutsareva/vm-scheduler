@@ -38,6 +38,10 @@ TEST(task_registry, simple)
         .WillOnce(Return(Result<void>::Success()));
     EXPECT_CALL(*taskStorageMock, terminateVmsWithoutAgents(_, _))
         .WillOnce(Return(Result<void>::Success()));
+    EXPECT_CALL(*taskStorageMock, getAllocatedVms())
+        .WillOnce(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
+        .WillOnce(Return(Result{AllocatedVmInfos{}}));
 
     TaskRegistry taskRegistry(
         config, std::move(taskStorageMock), std::move(cloudClientMock));

@@ -20,6 +20,7 @@ target_link_libraries(
         gtest_main
         gmock_main
         aws_allocator
+        lib_state
 )
 
 include(GoogleTest)

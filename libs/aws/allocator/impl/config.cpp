@@ -10,7 +10,17 @@ namespace {
 
 const std::string DEFAULT_AWS_EC2_AMI_ID = "ami-02a92e06fd643c11b";
 const std::string DEFAULT_AWS_INSTANCE_CLASS = "c6g.";
+const std::string DEFAULT_AWS_INSTANCE_TAGS = "owner:vms-prod";
+const std::string DEFAULT_AWS_VM_TOKEN_PREFIX = "vms-prod";
 
+std::unordered_map<std::string, std::string> getVmTags()
+{
+    // TODO: parse tags from env var
+
+    return {
+        {"owner", "vms-prod"},
+    };
+}
 } // anonymous namespace
 
 AwsClientConfig createAwsClientConfig()
@@ -51,6 +61,9 @@ AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client)
     return {
         .amiId = getFromEnvOrDefault("AWS_EC2_AMI_ID", DEFAULT_AWS_EC2_AMI_ID),
         .vmTypes = std::move(instanceTypeInfos),
+        .vmTags = getVmTags(),
+        .tokenPrefix = getFromEnvOrDefault(
+            "VMS_AWS_VM_TOKEN_PREFIX", DEFAULT_AWS_VM_TOKEN_PREFIX),
     };
 }
 

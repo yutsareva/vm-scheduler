@@ -22,7 +22,7 @@ void Allocator::allocate() noexcept
     std::vector<VmId> unallocatedVms;
     for (const auto& vm: vmsToAllocate.ValueRefOrThrow()) {
         INFO() << "Allocating VM: " << vm.id;
-        auto allocationResult = cloudClient_->allocate(vm.capacity);
+        const auto allocationResult = cloudClient_->allocate(vm.id, vm.capacity);
         if (allocationResult.IsSuccess()) {
             const auto& cloudVmInfo = allocationResult.ValueRefOrThrow();
             auto saveAllocationResult = taskStorage_->saveVmAllocationResult(vm.id, cloudVmInfo);
@@ -31,11 +31,10 @@ void Allocator::allocate() noexcept
                 ERROR() << "Failed to save allocation result for vm with id " << vm.id << ", cloud_vm_id "
                         << cloudVmInfo.id << ", cloud_vm_type " << cloudVmInfo.type << ": "
                         << what(std::move(saveAllocationResult).ErrorOrThrow());
-                // TODO: in a bright future Failure Detector will process allocated but not recorded VMs
             }
         } else {
             ERROR() << "Failed to allocate vm for id " << vm.id << ", capacity: " << vm.capacity.cpu.count() << "cpu, "
-                    << vm.capacity.ram.count() << "MB: " << what(std::move(allocationResult).ErrorOrThrow());
+                    << vm.capacity.ram.count() << "MB: " << what(allocationResult.ErrorRefOrThrow());
             unallocatedVms.push_back(vm.id);
         }
     }
@@ -63,19 +62,21 @@ void Allocator::terminate() noexcept
     for (const auto& vm: vmsToTerminate.ValueRefOrThrow()) {
         INFO() << "Terminating VM: " << vm.id;
 
-        auto terminationResult = cloudClient_->terminate(vm);
+        const auto terminationResult = cloudClient_->terminate(vm.cloudVmId);
 
         if (terminationResult.IsSuccess()) {
             auto changeStatusResult = taskStorage_->saveVmTerminationResult(vm.id);
             if (changeStatusResult.IsFailure()) {
-                ERROR() << "Failed to set status 'terminated' for vm with id " << vm.id
-                        << ": " << what(std::move(changeStatusResult).ErrorOrThrow());
+                ERROR() << "Failed to set status "
+                        << toString(VmStatus::Terminated)
+                        << " for vm with id " << vm.id
+                        << ": " << what(changeStatusResult.ErrorRefOrThrow());
 
                 // TODO: in a bright future Failure Detector will process terminated but not recorded VMs
             }
         } else {
             ERROR() << "Failed to terminate vm for id " << vm.id << ", cloud vm id: " << vm.cloudVmId << ": "
-                    << what(std::move(terminationResult).ErrorOrThrow());
+                    << what(terminationResult.ErrorRefOrThrow());
             unterminatedVms.push_back(vm.id);
         }
     }
@@ -87,6 +88,46 @@ void Allocator::terminate() noexcept
             ERROR() << "Failed to return unterminated vms to initial status: " << joinSeq(unterminatedVms) << ": "
                     << what(std::move(returnResult).ErrorOrThrow());
             // TODO: in a bright future Failure Detector will process VMs in wrong 'terminating' status
+        }
+    }
+}
+
+void Allocator::terminateUntrackedVms() noexcept
+{
+    const auto trackedVmsResult = taskStorage_->getAllocatedVms();
+    if (trackedVmsResult.IsFailure()) {
+        ERROR() << "Failed to get allocated vms from DB: "
+                << what(trackedVmsResult.ErrorRefOrThrow());
+        return;
+    }
+    INFO() << "Tracked active instances: " << trackedVmsResult.ValueRefOrThrow();
+
+    const auto allVmsResult = cloudClient_->getAllAllocatedVms();
+    if (allVmsResult.IsFailure()) {
+        ERROR() << "Failed to get all allocated vms: "
+                << what(allVmsResult.ErrorRefOrThrow());
+        return;
+    }
+    INFO() << "All active instances: " << allVmsResult.ValueRefOrThrow();
+    if (allVmsResult.ValueRefOrThrow().empty()) {
+        return;
+    }
+
+    std::vector<AllocatedVmInfo> untrackedVms;
+    for (const auto& vm : allVmsResult.ValueRefOrThrow()) {
+        if (!trackedVmsResult.ValueRefOrThrow().contains(vm)) {
+            untrackedVms.push_back(vm);
+        }
+    }
+
+    for (const auto& vm : untrackedVms) {
+        INFO() << "Terminating VM: " << vm.id;
+
+        const auto terminationResult = cloudClient_->terminate(vm.id);
+        if (terminationResult.IsFailure()) {
+            ERROR() << "Failed to set status " <<  toString(VmStatus::Terminated)
+                    << " for vm with cloud id " << vm.id
+                    << ": " << what(terminationResult.ErrorRefOrThrow());
         }
     }
 }

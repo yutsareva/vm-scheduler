@@ -4,8 +4,10 @@
 
 namespace vm_scheduler {
 
-FailureDetector::FailureDetector(TaskStorage* taskStorage)
-    : config_(createFailureDetectorConfig()), taskStorage_(taskStorage)
+FailureDetector::FailureDetector(TaskStorage* taskStorage, Allocator* allocator)
+    : config_(createFailureDetectorConfig())
+    , taskStorage_(taskStorage)
+    , allocator_(allocator)
 { }
 
 void FailureDetector::handleStaleAllocatingVms_() noexcept
@@ -44,12 +46,18 @@ void FailureDetector::handleVmsWithoutAgents_() noexcept
     }
 }
 
+void FailureDetector::handleUntrackedVms_() noexcept
+{
+    allocator_->terminateUntrackedVms();
+}
+
 void FailureDetector::monitor() noexcept
 {
     INFO() << "Failure detector iteration started";
     handleStaleAllocatingVms_();
     handleInactiveAgents_();
     handleVmsWithoutAgents_();
+    handleUntrackedVms_();
 }
 
 } // namespace vm_scheduler

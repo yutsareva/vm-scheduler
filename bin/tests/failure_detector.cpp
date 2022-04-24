@@ -54,9 +54,11 @@ TEST(fail_tasks, non_working_allocator)
         .detectFailuresInterval = 1s,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();
-    EXPECT_CALL(*cloudClientMock, allocate(_))
+    EXPECT_CALL(*cloudClientMock, allocate(_, _))
         .WillRepeatedly(Return(Result<AllocatedVmInfo>::Failure<RuntimeException>(
             "Unexpected exception while requesting a VM")));
+    EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
+        .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
         std::make_unique<PgTaskStorage>(pg::createPool()),
@@ -82,10 +84,12 @@ TEST(fail_tasks, non_working_agent)
         .id = "cloud vm id",
         .type = "cloud vm type",
     };
-    EXPECT_CALL(*cloudClientMock, allocate(_))
+    EXPECT_CALL(*cloudClientMock, allocate(_, _))
         .WillRepeatedly(Return(Result{allocatedVmInfo}));
     EXPECT_CALL(*cloudClientMock, terminate(_))
         .WillRepeatedly(Return(Result<void>::Success()));
+    EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
+        .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
@@ -96,4 +100,33 @@ TEST(fail_tasks, non_working_agent)
     const auto taskResult =
         t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
     checkAllJobsFailed(taskResult);
+}
+
+
+TEST(TerminateUntracked, simple)
+{
+    setupEnv();
+    Postgres postgres("vms_db_schema.sql");
+
+    const Config config = {
+        .allocationInterval = 1s,
+        .schduleInterval = 1s,
+        .detectFailuresInterval = 1s,
+    };
+    auto cloudClientMock = std::make_unique<t::CloudClientMock>();
+    const auto allocatedVmInfo = AllocatedVmInfo{
+        .id = "cloud vm id",
+        .type = "cloud vm type",
+    };
+    EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
+        .WillOnce(Return(Result{AllocatedVmInfos{allocatedVmInfo}}));
+    EXPECT_CALL(*cloudClientMock, terminate(_))
+        .WillOnce(Return(Result<void>::Success()));
+
+    auto taskRegistry = std::make_unique<TaskRegistry>(
+        config,
+        std::make_unique<PgTaskStorage>(createPool(postgres)),
+        std::move(cloudClientMock));
+
+    std::this_thread::sleep_for(0.5s);
 }

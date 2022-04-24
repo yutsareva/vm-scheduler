@@ -45,6 +45,7 @@ public:
     Result<std::vector<AssignedJob>> getAssignedJobs(const VmId vmId) noexcept override;
     Result<JobToLaunch> getJobToLaunch(const VmId vmId, const JobId jobId) noexcept override;
     Result<void> updateJobState(const VmId vmId, const JobId jobId, const JobState& jobState) noexcept override;
+    Result<AllocatedVmInfos> getAllocatedVms() noexcept override;
 
 private:
     Result<bool> isSchedulingRelevant_(pqxx::transaction_base& txn, const PlanId currentPlanId) noexcept;

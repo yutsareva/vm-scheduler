@@ -928,7 +928,7 @@ Result<void> PgTaskStorage::updateJobState(
 
         pg::execQuery(updateJobQuery, *txn);
         if (finalJobStatuses.contains(jobState.status)) {
-            const auto updateVmIdleCapcity = toString(
+            const auto updateVmIdleCapacity = toString(
                 "UPDATE scheduler.vms AS v "
                     "SET cpu_idle = cpu_idle + j.cpu, "
                     "ram_idle = ram_idle + j.ram "
@@ -937,13 +937,39 @@ Result<void> PgTaskStorage::updateJobState(
                     "AND j.id = ", jobId, " "
                     "AND j.vm_id = ", vmId, ";"
             );
-            pg::execQuery(updateVmIdleCapcity, *txn);
+            pg::execQuery(updateVmIdleCapacity, *txn);
         }
         txn->commit();
         return Result<void>::Success();
     } catch (const std::exception& ex) {
         return Result<void>::Failure<PgException>(toString(
-            "Unexpected pg exception: ", ex.what()));
+            "Unexpected pg exception while updating job state: ", ex.what()));
+    }
+}
+
+Result<AllocatedVmInfos> PgTaskStorage::getAllocatedVms() noexcept
+{
+    const auto allocatedVmsQuery = toString(
+        "SELECT cloud_vm_id, cloud_vm_type FROM scheduler.vms "
+        "WHERE status IN ", pg::asFormattedList(getActiveVmStatuses()), ";");
+    try {
+        auto txn = pool_.masterReadOnlyTransaction();
+        const auto result = pg::execQuery(allocatedVmsQuery, *txn);
+
+        AllocatedVmInfos vms;
+        vms.reserve(result.size());
+
+        std::transform(result.begin(), result.end(), std::inserter(vms, vms.begin()),
+                       [](const pqxx::row& row) -> AllocatedVmInfo {
+                           return {
+                               .id = row.at("cloud_vm_id").as<std::string>(),
+                               .type = row.at("cloud_vm_type").as<std::string>(),
+                           };
+                       });
+        return Result{std::move(vms)};
+    } catch (const std::exception& ex) {
+        return Result<AllocatedVmInfos>::Failure<PgException>(toString(
+            "Unexpected pg exception while receiving allocated VMs: ", ex.what()));
     }
 }
 

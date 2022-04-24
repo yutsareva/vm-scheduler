@@ -55,6 +55,7 @@ public:
         const VmId vmId, const JobId jobId) noexcept = 0;
     virtual Result<void> updateJobState(
         const VmId vmId, const JobId jobId, const JobState& jobState) noexcept = 0;
+    virtual Result<AllocatedVmInfos> getAllocatedVms() noexcept = 0;
 };
 
 } // namespace vm_scheduler

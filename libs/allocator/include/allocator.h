@@ -14,6 +14,7 @@ public:
     Allocator(TaskStorage* taskStorage, std::unique_ptr<CloudClient>&& cloudClient);
     void allocate() noexcept;
     void terminate() noexcept;
+    void terminateUntrackedVms() noexcept;
 
 private:
     TaskStorage* taskStorage_;

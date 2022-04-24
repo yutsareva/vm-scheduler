@@ -8,6 +8,8 @@
 #include <aws/ec2/EC2Client.h>
 #include <aws/ec2/model/InstanceType.h>
 
+#include <unordered_map>
+
 namespace vm_scheduler {
 
 struct AwsClientConfig {
@@ -30,9 +32,13 @@ using InstanceTypeInfos = std::vector<InstanceTypeInfo>;
 
 std::ostream& operator<<(std::ostream& out, const InstanceTypeInfos& vmTypeInfos);
 
+using Tags = std::unordered_map<std::string, std::string>;
+
 struct AwsInstancesConfig {
     Aws::String amiId;
     InstanceTypeInfos vmTypes;
+    Tags vmTags;
+    std::string tokenPrefix;
 };
 
 AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client);

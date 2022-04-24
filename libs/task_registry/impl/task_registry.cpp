@@ -13,7 +13,7 @@ TaskRegistry::TaskRegistry(
     , taskStorage_(std::move(taskStorage))
     , allocator_(taskStorage_.get(), std::move(cloudClient))
     , scheduler_(id_, taskStorage_.get())
-    , failureDetector_(taskStorage_.get())
+    , failureDetector_(taskStorage_.get(), &allocator_)
     , grpcServer_(createServerConfig(), taskStorage_.get())
     , allocationThread_([this] { allocator_.allocate(); }, config.allocationInterval)
     , terminationThread_([this] { allocator_.terminate(); }, config.allocationInterval)

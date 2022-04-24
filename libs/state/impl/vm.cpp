@@ -46,11 +46,24 @@ const std::vector<VmStatus>& getActiveVmStatuses()
 
 std::ostream& operator<<(std::ostream& out, const std::vector<ActiveVm>& activeVms)
 {
+    out << "[";
     for (const auto vm : activeVms) {
-        out << "[id: " << vm.id << ", "
+        out << "{id: " << vm.id << ", "
             << "total capacity: " << vm.totalCapacity << ", "
-            << "idle capacity: " << vm.idleCapacity << "], ";
+            << "idle capacity: " << vm.idleCapacity << "}, ";
     }
+    out << "]";
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const AllocatedVmInfos& vms)
+{
+    out << "[";
+    for (const auto vm : vms) {
+        out << "{id: " << vm.id << ", "
+            << "type: " << vm.type << "}, ";
+    }
+    out << "]";
     return out;
 }
 
