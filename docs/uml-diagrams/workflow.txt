@@ -1,0 +1,74 @@
+@startuml
+actor user as "User"
+participant server as "gRPC Server"
+database store as "TaskStorage"
+participant scheduler as "Scheduler"
+participant allocator as "Allocator"
+
+participant aws as "AWS"
+participant agents as "Agents on allocated VMs"
+database s3 as "S3"
+
+==Add task==
+user -> server ++ : Post a task
+server -> store ++ : Save task
+store -> server --
+server -> user --
+
+==Scheduling plan generation==
+scheduler -> store ++ : Get current state
+activate scheduler
+store -> scheduler --
+rnote over scheduler
+ running scheduling
+ algorithm to distribute
+ jobs among VMs
+endrnote
+scheduler -> store ++ : Commit state update
+store -> scheduler --
+deactivate scheduler
+
+==VM allocation / termination==
+
+allocator -> store ++ : Get VMs to allocate / terminate
+activate allocator
+store -> allocator --
+allocator -> aws ++ : Allocate / terminate VMs
+aws -> allocator --
+allocator -> store ++ : Store new allocation / termination status
+store -> allocator --
+deactivate allocator
+rnote over agents
+ agent starts
+ after VM initialization
+endrnote
+
+==Running jobs==
+agents -> server ++ : Get jobs to run
+activate agents
+server -> store ++
+store -> server --
+server -> agents --
+rnote over agents
+ starting job container
+endrnote
+agents -> server ++ : Send heartbeats
+server -> agents --
+rnote over agents
+ job completes
+endrnote
+agents -> s3 ++ : Save job result
+s3 -> agents --
+agents -> server ++ : Report job result
+server -> store ++
+store -> server --
+server -> agents --
+deactivate agents
+
+==Get task result==
+user -> server ++ : Poll task result
+server -> store ++
+store -> server --
+server -> user --
+
+@enduml

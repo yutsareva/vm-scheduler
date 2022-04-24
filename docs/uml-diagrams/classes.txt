@@ -1,0 +1,40 @@
+@startuml
+
+interface TaskStorage
+class PgTaskStorage
+TaskStorage <|.. PgTaskStorage
+
+class Allocator
+interface CloudClient
+class AwsCloudClient
+
+Allocator *-- CloudClient
+CloudClient <|.. AwsCloudClient
+TaskStorage <.. Allocator
+
+class Scheduler
+interface VmAssigner
+class SimpleVmAssigner
+
+Scheduler *-- VmAssigner
+VmAssigner <|.. SimpleVmAssigner
+TaskStorage <.. Scheduler
+
+class FailureDetector
+Allocator <.. FailureDetector
+TaskStorage <.. FailureDetector
+
+class GrpcServer
+class AgentApiSchedulerService
+class PublicApiSchedulerService
+TaskStorage <.. GrpcServer
+GrpcServer *-- AgentApiSchedulerService
+GrpcServer *-- PublicApiSchedulerService
+
+class TaskRegistry
+TaskRegistry o-- Allocator
+TaskRegistry o-- Scheduler
+TaskRegistry o-- FailureDetector
+TaskRegistry o-- GrpcServer
+
+@enduml
