@@ -29,10 +29,10 @@ private:
     FailureDetector failureDetector_;
     GrpcServer grpcServer_;
 
-    BackgroundThread allocationThread_;
-    BackgroundThread terminationThread_;
-    BackgroundThread schedulingThread_;
-    BackgroundThread monitorThread_;
+    std::unique_ptr<BackgroundThread> allocationThread_;
+    std::unique_ptr<BackgroundThread> terminationThread_;
+    std::unique_ptr<BackgroundThread> schedulingThread_;
+    std::unique_ptr<BackgroundThread> monitorThread_;
 };
 
 } // namespace vm_scheduler

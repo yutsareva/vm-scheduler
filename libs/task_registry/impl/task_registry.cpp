@@ -15,11 +15,17 @@ TaskRegistry::TaskRegistry(
     , scheduler_(id_, taskStorage_.get())
     , failureDetector_(taskStorage_.get(), &allocator_)
     , grpcServer_(createServerConfig(), taskStorage_.get())
-    , allocationThread_([this] { allocator_.allocate(); }, config.allocationInterval)
-    , terminationThread_([this] { allocator_.terminate(); }, config.allocationInterval)
-    , schedulingThread_([this] { scheduler_.schedule(); }, config.schduleInterval)
-    , monitorThread_([this] { failureDetector_.monitor(); }, config.detectFailuresInterval)
 {
+    if (config.mode == SchedulerMode::FullScheduler || config.mode == SchedulerMode::SchedulerService) {
+        allocationThread_ = std::make_unique<BackgroundThread>([this] { allocator_.allocate(); }, config.allocationInterval);
+        terminationThread_ = std::make_unique<BackgroundThread>([this] { allocator_.terminate(); }, config.allocationInterval);
+        monitorThread_ = std::make_unique<BackgroundThread>([this] { failureDetector_.monitor(); }, config.detectFailuresInterval);
+    }
+
+    if (config.mode == SchedulerMode::FullScheduler || config.mode == SchedulerMode::CoreScheduler) {
+        schedulingThread_ = std::make_unique<BackgroundThread>([this] { scheduler_.schedule(); }, config.scheduleInterval);
+    }
+
     INFO() << "Backend with id = " << id_ << " started";
 }
 

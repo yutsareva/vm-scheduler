@@ -50,7 +50,7 @@ TEST(fail_tasks, non_working_allocator)
 
     const Config config = {
         .allocationInterval = 1s,
-        .schduleInterval = 1s,
+        .scheduleInterval = 1s,
         .detectFailuresInterval = 1s,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();
@@ -76,7 +76,7 @@ TEST(fail_tasks, non_working_agent)
 
     const Config config = {
         .allocationInterval = 1s,
-        .schduleInterval = 1s,
+        .scheduleInterval = 1s,
         .detectFailuresInterval = 1s,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();
@@ -110,7 +110,7 @@ TEST(TerminateUntracked, simple)
 
     const Config config = {
         .allocationInterval = 1s,
-        .schduleInterval = 1s,
+        .scheduleInterval = 1s,
         .detectFailuresInterval = 1s,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();

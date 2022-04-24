@@ -9,19 +9,31 @@ namespace {
 constexpr size_t DEFAULT_VMS_ALLOCATION_INTERVAL_S{60};
 constexpr size_t DEFAULT_VMS_SCHEDULE_INTERVAL_S{60};
 constexpr size_t DEFAULT_DETECT_FAILURES_INTERVAL_S{60};
+constexpr const char* DEFAULT_SCHEDULER_MODE = "full";
 
 } // anonymous namespace
+
+SchedulerMode schedulerModeFromString(const std::string& value)
+{
+    const static std::unordered_map<std::string, SchedulerMode> map = {
+        {"service", SchedulerMode::SchedulerService},
+        {"core", SchedulerMode::CoreScheduler},
+        {"full", SchedulerMode::FullScheduler},
+    };
+    return map.at(value);
+}
 
 Config createConfig()
 {
     return {
-        .allocationInterval =
-            std::chrono::seconds{getFromEnvOrDefault("VMS_ALLOCATION_INTERVAL_S", DEFAULT_VMS_ALLOCATION_INTERVAL_S)},
-        .schduleInterval =
-            std::chrono::seconds{getFromEnvOrDefault("VMS_SCHEDULE_INTERVAL_S", DEFAULT_VMS_SCHEDULE_INTERVAL_S)},
-        .detectFailuresInterval =
-            std::chrono::seconds{
-                getFromEnvOrDefault("VMS_DETECT_FAILURES_INTERVAL_S", DEFAULT_DETECT_FAILURES_INTERVAL_S)},
+        .allocationInterval = std::chrono::seconds{getFromEnvOrDefault(
+            "VMS_ALLOCATION_INTERVAL_S", DEFAULT_VMS_ALLOCATION_INTERVAL_S)},
+        .scheduleInterval = std::chrono::seconds{getFromEnvOrDefault(
+            "VMS_SCHEDULE_INTERVAL_S", DEFAULT_VMS_SCHEDULE_INTERVAL_S)},
+        .detectFailuresInterval = std::chrono::seconds{getFromEnvOrDefault(
+            "VMS_DETECT_FAILURES_INTERVAL_S", DEFAULT_DETECT_FAILURES_INTERVAL_S)},
+        .mode = schedulerModeFromString(
+            getFromEnvOrDefault("VMS_MODE", DEFAULT_SCHEDULER_MODE)),
     };
 }
 

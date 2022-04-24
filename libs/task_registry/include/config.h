@@ -5,10 +5,19 @@
 
 namespace vm_scheduler {
 
+enum class SchedulerMode {
+    SchedulerService /* "service" */,
+    CoreScheduler /* "core" */,
+    FullScheduler /* "full" */,
+};
+
+SchedulerMode schedulerModeFromString(const std::string& value);
+
 struct Config {
     std::chrono::seconds allocationInterval;
-    std::chrono::seconds schduleInterval;
+    std::chrono::seconds scheduleInterval;
     std::chrono::seconds detectFailuresInterval;
+    SchedulerMode mode;
 };
 
 Config createConfig();
