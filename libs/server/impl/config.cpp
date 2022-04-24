@@ -12,7 +12,8 @@ const std::string DEFAULT_GRPC_SERVER_ADDRESS = "0.0.0.0:50001";
 ServerConfig createServerConfig()
 {
     return {
-        .address = getFromEnvOrDefault("VMS_GRPC_SERVER_ADDRESS", DEFAULT_GRPC_SERVER_ADDRESS),
+        .address = getFromEnvOrDefault(
+            "VMS_GRPC_SERVER_ADDRESS", DEFAULT_GRPC_SERVER_ADDRESS),
     };
 }
 

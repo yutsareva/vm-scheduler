@@ -14,13 +14,19 @@ public:
     explicit AgentApiSchedulerService(GrpcServer& grpcServer);
 
     grpc::Status getAssignedJobs(
-        grpc::ServerContext* context, const proto::VmId* request, proto::AssignedJobs* response) override;
+        grpc::ServerContext* context,
+        const proto::VmId* request,
+        proto::AssignedJobs* response) override;
 
     grpc::Status getJobToLaunch(
-        grpc::ServerContext* context, const proto::LaunchRequest* request, proto::JobToLaunch* response) override;
+        grpc::ServerContext* context,
+        const proto::LaunchRequest* request,
+        proto::JobToLaunch* response) override;
 
     grpc::Status updateJobState(
-        grpc::ServerContext* context, const proto::ExecutionJobState* request, google::protobuf::Empty* response) override;
+        grpc::ServerContext* context,
+        const proto::ExecutionJobState* request,
+        google::protobuf::Empty* response) override;
 
 private:
     GrpcServer& grpcServer_;

@@ -14,8 +14,10 @@ constexpr size_t DEFAULT_VM_RESTART_ATTEMPT_COUNT{3};
 CommonConfig createCommonConfig()
 {
     return {
-        .jobRestartAttemptCount = getFromEnvOrDefault("VMS_JOB_RESTART_ATTEMPT_COUNT", DEFAULT_JOB_RESTART_ATTEMPT_COUNT),
-        .vmRestartAttemptCount = getFromEnvOrDefault("VMS_VM_RESTART_ATTEMPT_COUNT", DEFAULT_VM_RESTART_ATTEMPT_COUNT),
+        .jobRestartAttemptCount = getFromEnvOrDefault(
+            "VMS_JOB_RESTART_ATTEMPT_COUNT", DEFAULT_JOB_RESTART_ATTEMPT_COUNT),
+        .vmRestartAttemptCount = getFromEnvOrDefault(
+            "VMS_VM_RESTART_ATTEMPT_COUNT", DEFAULT_VM_RESTART_ATTEMPT_COUNT),
     };
 }
 

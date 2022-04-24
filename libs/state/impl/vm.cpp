@@ -44,7 +44,8 @@ const std::vector<VmStatus>& getActiveVmStatuses()
     return activeVmStatuses;
 }
 
-std::ostream& operator<<(std::ostream& out, const std::vector<ActiveVm>& activeVms)
+std::ostream& operator<<(
+    std::ostream& out, const std::vector<ActiveVm>& activeVms)
 {
     out << "[";
     for (const auto vm : activeVms) {

@@ -15,7 +15,8 @@ constexpr auto INTERNAL_ERROR_MSG_PREFIX = "Internal error. Incident id: ";
 
 } // anonymous namespace
 
-grpc::Status grpcInternalErrorStatus(const std::exception_ptr& ex, const std::string& msg)
+grpc::Status grpcInternalErrorStatus(
+    const std::exception_ptr& ex, const std::string& msg)
 {
     const auto errorUuid = "123-345-5656"; // TODO: generate uuid
     ERROR() << errorUuid << msg << what(ex);

@@ -16,7 +16,9 @@ namespace vm_scheduler {
 
 namespace {
 
-void setAssignedJobs(proto::AssignedJobs* protoAssignedJobs, const std::vector<AssignedJob>& assignedJobs)
+void setAssignedJobs(
+    proto::AssignedJobs* protoAssignedJobs,
+    const std::vector<AssignedJob>& assignedJobs)
 {
     for (const auto job: assignedJobs) {
         proto::AssignedJob* protojob = protoAssignedJobs->add_jobs();
@@ -51,10 +53,12 @@ JobStatus protoJobStatusToJobStatus(const proto::JobStatus jobStatus)
     }
 }
 
-JobState protoExecutionJobStateToJobState(const proto::ExecutionJobState& protoExecutionJobState)
+JobState protoExecutionJobStateToJobState(
+    const proto::ExecutionJobState& protoExecutionJobState)
 {
     return {
-        .status = protoJobStatusToJobStatus(protoExecutionJobState.job_result().status()),
+        .status = protoJobStatusToJobStatus(
+            protoExecutionJobState.job_result().status()),
         .resultUrl = protoExecutionJobState.job_result().result_url(),
     };
 }
@@ -72,34 +76,44 @@ const std::unordered_set<JobStatus>& getAllowedAgentUpdateJobStatuses()
 
 } // anonymous namespace
 
-AgentApiSchedulerService::AgentApiSchedulerService(GrpcServer& grpcServer) : grpcServer_(grpcServer) { }
+AgentApiSchedulerService::AgentApiSchedulerService(GrpcServer& grpcServer)
+    : grpcServer_(grpcServer)
+{ }
 
 grpc::Status AgentApiSchedulerService::getAssignedJobs(
     grpc::ServerContext*, const proto::VmId* vmId, proto::AssignedJobs* protoJobIds)
 {
-    const auto assignedJobs = grpcServer_.taskStorage_->getAssignedJobs(vmId->value());
+    const auto assignedJobs =
+        grpcServer_.taskStorage_->getAssignedJobs(vmId->value());
     if (assignedJobs.IsFailure()) {
         return grpcInternalErrorStatus(
-            assignedJobs.ErrorRefOrThrow(), "getAssignedJobs: Unexpected error while querying job statuses: ");
+            assignedJobs.ErrorRefOrThrow(),
+            "getAssignedJobs: Unexpected error while querying job statuses: ");
     }
     setAssignedJobs(protoJobIds, assignedJobs.ValueRefOrThrow());
     return grpc::Status::OK;
 }
 
 grpc::Status AgentApiSchedulerService::getJobToLaunch(
-    grpc::ServerContext*, const proto::LaunchRequest* protoLaunchRequest, proto::JobToLaunch* protoJob)
+    grpc::ServerContext*,
+    const proto::LaunchRequest* protoLaunchRequest,
+    proto::JobToLaunch* protoJob)
 {
     const auto jobToLaunch = grpcServer_.taskStorage_->getJobToLaunch(
-        protoLaunchRequest->vm_id().value(), protoLaunchRequest->job_id().value());
+        protoLaunchRequest->vm_id().value(),
+        protoLaunchRequest->job_id().value());
 
     if (jobToLaunch.IsFailure()) {
         if (jobToLaunch.holdsErrorType<JobNotFoundException>()) {
             INFO() << "getJobToLaunch: " << what(jobToLaunch.ErrorRefOrThrow());
             return grpc::Status(
-                grpc::StatusCode::NOT_FOUND, toString("Job ", protoLaunchRequest->job_id().value(), " not found."));
+                grpc::StatusCode::NOT_FOUND,
+                toString(
+                    "Job ", protoLaunchRequest->job_id().value(), " not found."));
         }
         return grpcInternalErrorStatus(
-            jobToLaunch.ErrorRefOrThrow(), "getJobToLaunch: Unexpected error while getting job to launch: ");
+            jobToLaunch.ErrorRefOrThrow(),
+            "getJobToLaunch: Unexpected error while getting job to launch: ");
     }
 
     setJobToLaunch(protoJob, jobToLaunch.ValueRefOrThrow());
@@ -107,31 +121,44 @@ grpc::Status AgentApiSchedulerService::getJobToLaunch(
 }
 
 grpc::Status AgentApiSchedulerService::updateJobState(
-    grpc::ServerContext*, const proto::ExecutionJobState* protoExecutionJobState, google::protobuf::Empty*)
+    grpc::ServerContext*,
+    const proto::ExecutionJobState* protoExecutionJobState,
+    google::protobuf::Empty*)
 {
-    const auto jobState = protoExecutionJobStateToJobState(*protoExecutionJobState);
+    const auto jobState =
+        protoExecutionJobStateToJobState(*protoExecutionJobState);
     const auto& allowedForUpdateStatuses = getAllowedAgentUpdateJobStatuses();
     if (!allowedForUpdateStatuses.contains(jobState.status)) {
         return grpc::Status(
             grpc::StatusCode::INVALID_ARGUMENT,
-            toString("Status ", toString(jobState.status), " is not allowed to be set by agent"));
+            toString(
+                "Status ", toString(jobState.status),
+                " is not allowed to be set by agent"));
     }
 
     const auto result = grpcServer_.taskStorage_->updateJobState(
-        protoExecutionJobState->vm_id().value(), protoExecutionJobState->job_id().value(), jobState);
+        protoExecutionJobState->vm_id().value(),
+        protoExecutionJobState->job_id().value(),
+        jobState);
 
     if (result.IsFailure()) {
         INFO() << "updateJobState: " << what(result.ErrorRefOrThrow());
         if (result.holdsErrorType<JobNotFoundException>()) {
             return grpc::Status(
-                grpc::StatusCode::NOT_FOUND, toString("Job ", protoExecutionJobState->job_id().value(), " not found."));
+                grpc::StatusCode::NOT_FOUND,
+                toString(
+                    "Job ", protoExecutionJobState->job_id().value(),
+                    " not found."));
         } else if (result.holdsErrorType<JobCancelledException>()) {
             return grpc::Status(
                 grpc::StatusCode::CANCELLED,
-                toString("Job ", protoExecutionJobState->job_id().value(), " was cancelled."));
+                toString(
+                    "Job ", protoExecutionJobState->job_id().value(),
+                    " was cancelled."));
         }
         return grpcInternalErrorStatus(
-            result.ErrorRefOrThrow(), "updateJobState: Unexpected error while getting job to launch: ");
+            result.ErrorRefOrThrow(),
+            "updateJobState: Unexpected error while getting job to launch: ");
     }
 
     return grpc::Status::OK;

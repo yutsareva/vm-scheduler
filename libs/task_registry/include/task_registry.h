@@ -18,7 +18,9 @@ namespace vm_scheduler {
 class TaskRegistry {
 public:
     TaskRegistry(
-        const Config& config, std::unique_ptr<TaskStorage>&& taskStorage, std::unique_ptr<CloudClient>&& cloudClient);
+        const Config& config,
+        std::unique_ptr<TaskStorage>&& taskStorage,
+        std::unique_ptr<CloudClient>&& cloudClient);
 
 private:
     BackendId id_;
