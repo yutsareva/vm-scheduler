@@ -11,6 +11,8 @@ add_subdirectory(db)
 add_subdirectory(db/tests)
 
 add_subdirectory(failure_detector)
+add_subdirectory(failure_detector/tests)
+
 add_subdirectory(postgres)
 add_subdirectory(scheduler)
 add_subdirectory(server)
