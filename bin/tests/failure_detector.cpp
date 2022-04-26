@@ -16,6 +16,7 @@ using namespace ::testing;
 using namespace std::chrono_literals;
 
 namespace {
+
 void setupEnv()
 {
     setenv("VMS_SCHEDULING_INTERVAL_S", "0", true);

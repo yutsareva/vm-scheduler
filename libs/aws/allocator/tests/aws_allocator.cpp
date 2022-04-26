@@ -10,7 +10,7 @@ using namespace vm_scheduler;
 
 // To run the test AWS_EC2_ACCESS_KEY_ID and AWS_EC2_SECRET_KEY env vars must be specified
 // If tests fail check there is no allocated by tests resources left in your AWS account
-TEST(aws_allocator, simple)
+TEST(AwsCloudClient, simple)
 {
     if (!std::getenv("AWS_EC2_ACCESS_KEY_ID") ||
         !std::getenv("AWS_EC2_SECRET_KEY")) {
@@ -19,7 +19,12 @@ TEST(aws_allocator, simple)
         return;
     }
 
+    // Allocate the cheapest class of instances in tests
+    setenv("VMS_AWS_INSTANCE_CLASS", "t2.", true);
+    setenv("AWS_EC2_AMI_ID", "ami-0d4df4d5d1febee7c", true);
+
     AwsCloudClient client;
+
     const auto allocatedVmsAtStart = client.getAllAllocatedVms().ValueOrThrow();
     INFO() << "All allocated VMs at the beginning: " << allocatedVmsAtStart;
 
@@ -28,21 +33,20 @@ TEST(aws_allocator, simple)
         .ram = 1024_MB,
     };
 
-    const auto allocated = client.allocate(1, slot);
+    const auto allocated = client.allocate(time(0), slot);
     EXPECT_TRUE(allocated.IsSuccess()) << what(allocated.ErrorRefOrThrow());
-
-    const TerminationPendingVmInfo vmInfo = {
-        .id = 42,
-        .cloudVmId = allocated.ValueRefOrThrow().id,
-    };
 
     const auto allocatedVmsAfterAllocation =
         client.getAllAllocatedVms().ValueOrThrow();
     INFO() << "All allocated VMs after allocation: "
            << allocatedVmsAfterAllocation;
 
-    const auto terminated = client.terminate(vmInfo.cloudVmId);
-    EXPECT_TRUE(terminated.IsSuccess()) << what(allocated.ErrorRefOrThrow());
+    const auto terminated = client.terminate(allocated.ValueRefOrThrow().id);
+    EXPECT_TRUE(terminated.IsSuccess()) << what(terminated.ErrorRefOrThrow());
+
+    const auto terminatedAgain = client.terminate(allocated.ValueRefOrThrow().id);
+    EXPECT_TRUE(terminatedAgain.IsSuccess())
+        << what(terminatedAgain.ErrorRefOrThrow());
 
     EXPECT_TRUE(
         std::find_if(

@@ -27,7 +27,7 @@ Result<pqxx::result> PgTaskStorage::execWritableQuery_(const std::string& query)
         auto txn = pool_.writableTransaction();
         auto result = pg::execQuery(query, *txn);
         txn->commit();
-        return Result<pqxx::result>(std::move(result));
+        return Result{std::move(result)};
     } catch (const std::exception& ex) {
         return Result<pqxx::result>::Failure<PgException>(toString(
             "Unexpected pg exception: ", ex.what()));
@@ -240,7 +240,7 @@ Result<pg::TransactionHandle> PgTaskStorage::acquireLock_(const bool noWait) noe
         pg::execQuery(lockQuery, *txn);
         return Result{std::move(txn)};
     } catch (const pqxx::sql_error& ex) {
-        if (strstr(ex.what(), "could not obtain lock") != 0) {
+        if (strstr(ex.what(), "could not obtain lock") != nullptr) {
             return Result<pg::TransactionHandle>::Failure<LockUnavailable>(toString(
                 "Failed to obtain SHARE ROW EXCLUSIVE lock on scheduler.plan table",  noWait ? " with NOWAIT;" : ""));
         }

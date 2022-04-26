@@ -141,7 +141,7 @@ Aws::EC2::Model::RunInstancesRequest createRunRequest(
         .WithPlacement(getPlacement())
         .WithImageId(amiId)
         .WithTagSpecifications({tagSpecs})
-        .WithClientToken(vmToken) // for making allocation idempotent
+        .WithClientToken(vmToken) // makes allocation idempotent
         .WithMinCount(1)
         .WithMaxCount(1);
 
