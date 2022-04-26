@@ -10,9 +10,12 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+get_filename_component(TESTS_PATH "." ABSOLUTE)
+file(GLOB LIB_CXX_SOURCES ${TESTS_PATH}/*.cpp)
+
 add_executable(
         test_aws_allocator
-        aws_allocator.cpp
+        ${LIB_CXX_SOURCES}
 )
 target_link_libraries(
         test_aws_allocator
