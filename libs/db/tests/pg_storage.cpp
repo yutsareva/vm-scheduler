@@ -1,5 +1,6 @@
 #include "libs/db/include/pg_task_storage.h"
 #include "libs/db/impl/test_utils.h"
+#include "libs/db/tests/helpers.h"
 
 #include <libs/task_storage/include/task_storage.h>
 #include <libs/scheduler/include/scheduler.h>
@@ -20,6 +21,7 @@ namespace t = vm_scheduler::testing;
 
 TEST(StartScheduling, exclusiveLock)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     auto pool = pg::createPool();
@@ -33,6 +35,7 @@ TEST(StartScheduling, exclusiveLock)
 
 TEST(StartScheduling, consecutiveStartScheduling)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto firstPlanIdResult = pgTaskStorage.startScheduling("backendId", 2s);
@@ -47,6 +50,7 @@ TEST(StartScheduling, consecutiveStartScheduling)
 
 TEST(GetCurrentState, empty)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto currentStateResult = pgTaskStorage.getCurrentState();
@@ -58,6 +62,7 @@ TEST(GetCurrentState, empty)
 
 TEST(CommitPlanChange, fulScenario)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto taskParameters = t::getOneJobTaskParameters();
@@ -124,6 +129,7 @@ TEST(CommitPlanChange, fulScenario)
 
 TEST(Allocation, allocate)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::PendingAllocation);
 
@@ -161,6 +167,7 @@ TEST(Allocation, allocate)
 
 TEST(Allocation, empty)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto vmsToAllocateResult = pgTaskStorage.getVmsToAllocate(5);
@@ -171,6 +178,7 @@ TEST(Allocation, empty)
 
 TEST(Termination, terminate)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::PendingTermination);
 
@@ -201,6 +209,7 @@ TEST(Termination, terminate)
 
 TEST(Termination, empty)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto vmsToTerminateResult = pgTaskStorage.getVmsToTerminate(5);
@@ -209,8 +218,9 @@ TEST(Termination, empty)
     EXPECT_EQ(vmsToTerminate.size(), 0u);
 }
 
-TEST(Cancellation, cancelMultiple)
+TEST(Cancellation, cancelQueued)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const auto taskParameters = t::getThreeJobTaskParameters();
@@ -227,6 +237,34 @@ TEST(Cancellation, cancelMultiple)
     EXPECT_TRUE(cancelResult.IsSuccess());
 
     const auto jobStates = pgTaskStorage.getJobStates(createdJobs.taskId);
+    EXPECT_TRUE(jobStates.IsSuccess());
+    EXPECT_TRUE(std::all_of(
+        jobStates.ValueRefOrThrow().cbegin(), jobStates.ValueRefOrThrow().cend(),
+        [](const JobState& jobState){ return jobState.status == JobStatus::Cancelled; }));
+}
+
+TEST(Cancellation, cancelScheduled)
+{
+    t::setupEnv();
+    PgTaskStorage pgTaskStorage(pg::createPool());
+
+    const auto taskParameters = t::getThreeJobTaskParameters();
+    const auto jobsResult = pgTaskStorage.addTask(taskParameters);
+    EXPECT_TRUE(jobsResult.IsSuccess());
+
+    auto pool = pg::createPool();
+    auto writeTxn = pool.writableTransaction();
+    const auto updateJobsQuery = toString(
+        "UPDATE scheduler.jobs ",
+        "SET status = '", toString(JobStatus::Scheduled), "' ",
+        "WHERE id IN (", joinSeq(jobsResult.ValueRefOrThrow().jobIds), ");");
+    pg::execQuery(updateJobsQuery, *writeTxn);
+    writeTxn->commit();
+
+    const auto cancelResult = pgTaskStorage.cancelTask(jobsResult.ValueRefOrThrow().taskId);
+    EXPECT_TRUE(cancelResult.IsSuccess());
+
+    const auto jobStates = pgTaskStorage.getJobStates(jobsResult.ValueRefOrThrow().taskId);
     EXPECT_TRUE(jobStates.IsSuccess());
     EXPECT_TRUE(std::all_of(
         jobStates.ValueRefOrThrow().cbegin(), jobStates.ValueRefOrThrow().cend(),

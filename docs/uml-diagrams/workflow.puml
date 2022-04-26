@@ -1,21 +1,23 @@
 @startuml
+
 actor user as "User"
 participant server as "gRPC Server"
 database store as "TaskStorage"
 participant scheduler as "Scheduler"
 participant allocator as "Allocator"
-
 participant aws as "AWS"
 participant agents as "Agents on allocated VMs"
 database s3 as "S3"
 
 ==Add task==
+
 user -> server ++ : Post a task
 server -> store ++ : Save task
 store -> server --
 server -> user --
 
 ==Scheduling plan generation==
+
 scheduler -> store ++ : Get current state
 activate scheduler
 store -> scheduler --
@@ -44,6 +46,7 @@ rnote over agents
 endrnote
 
 ==Running jobs==
+
 agents -> server ++ : Get jobs to run
 activate agents
 server -> store ++
@@ -66,6 +69,7 @@ server -> agents --
 deactivate agents
 
 ==Get task result==
+
 user -> server ++ : Poll task result
 server -> store ++
 store -> server --

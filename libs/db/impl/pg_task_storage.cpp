@@ -536,8 +536,11 @@ Result<void> PgTaskStorage::saveVmTerminationResult(const VmId vmId) noexcept
 Result<void> PgTaskStorage::cancelTask(const TaskId taskId) noexcept
 {
     const auto cancelTaskQuery = toString(
-        "UPDATE scheduler.jobs SET status = '", toString(JobStatus::Cancelling),
-        "' WHERE task_id = ", taskId, " AND status NOT IN ",
+        "UPDATE scheduler.jobs SET status = ",
+        "(CASE WHEN status = '", toString(JobStatus::Queued), "' ",
+        "then '", toString(JobStatus::Cancelled), "' "
+        "else '", toString(JobStatus::Cancelling), "' end)::scheduler.job_status "
+        "WHERE task_id = ", taskId, " AND status NOT IN ",
         pg::asFormattedList(getFinalJobStatuses()), ";");
 
     auto result = execWritableQuery_(cancelTaskQuery);
@@ -576,15 +579,9 @@ Result<JobStates> PgTaskStorage::getJobStates(const TaskId taskId) noexcept
         jobStates.reserve(result.size());
         std::transform(result.begin(), result.end(), std::back_inserter(jobStates),
                        [](const pqxx::row& r) -> JobState {
-                           // TODO: replace with as<std::optional<std::string>> and remove COALESCE from query
-                           const auto resultUrlOrEmpty = r.at("result_url").as<std::string>();
                            return {
                                .status = jobStatusFromString(r.at("status").as<std::string>()),
-                               .resultUrl
-                                   = resultUrlOrEmpty.empty()
-                                   ? std::nullopt
-                                   : std::optional<std::string>(resultUrlOrEmpty),
-//                               .resultUrl = r.at("result_url").as<std::optional<JobResultUrl>>(),
+                               .resultUrl = r.at("result_url").as<std::optional<JobResultUrl>>(),
                            };
                        });
         return Result{jobStates};
@@ -953,7 +950,7 @@ Result<AllocatedVmInfos> PgTaskStorage::getAllocatedVms() noexcept
         "SELECT cloud_vm_id, cloud_vm_type FROM scheduler.vms "
         "WHERE status IN ", pg::asFormattedList(getActiveVmStatuses()), ";");
     try {
-        auto txn = pool_.masterReadOnlyTransaction();
+        auto txn = pool_.readOnlyTransaction();
         const auto result = pg::execQuery(allocatedVmsQuery, *txn);
 
         AllocatedVmInfos vms;

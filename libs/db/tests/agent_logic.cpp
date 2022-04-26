@@ -1,5 +1,6 @@
 #include "libs/db/include/pg_task_storage.h"
 #include "libs/db/impl/test_utils.h"
+#include "libs/db/tests/helpers.h"
 #include "libs/postgres/include/pg_pool.h"
 
 #include <libs/task_storage/include/task_storage.h>
@@ -37,6 +38,7 @@ JobState getJobState(const JobStatus status) {
 
 TEST(AgentLogic, fullScenario)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::Allocated);
 
@@ -86,10 +88,10 @@ TEST(AgentLogic, fullScenario)
         EXPECT_TRUE(!jobInfo[0].at("result_url").as<std::optional<std::string>>());
 
         const auto vmInfo = pg::execQuery(vmInfoQuery, *readTxn);
-        EXPECT_EQ(vmInfo[0].at("cpu").as<std::optional<size_t>>(), 2u);
-        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<std::optional<size_t>>(), 1u);
-        EXPECT_EQ(vmInfo[0].at("ram").as<std::optional<size_t>>(), 2048u);
-        EXPECT_EQ(vmInfo[0].at("ram_idle").as<std::optional<size_t>>(), 1024u);
+        EXPECT_EQ(vmInfo[0].at("cpu").as<size_t>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<size_t>(), 1u);
+        EXPECT_EQ(vmInfo[0].at("ram").as<size_t>(), 2048u);
+        EXPECT_EQ(vmInfo[0].at("ram_idle").as<size_t>(), 1024u);
     }
 
     const auto finishJobResult = pgTaskStorage.updateJobState(
@@ -103,15 +105,16 @@ TEST(AgentLogic, fullScenario)
         EXPECT_TRUE(jobInfo[0].at("result_url").as<std::optional<std::string>>());
 
         const auto vmInfo = pg::execQuery(vmInfoQuery, *readTxn);
-        EXPECT_EQ(vmInfo[0].at("cpu").as<std::optional<size_t>>(), 2u);
-        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<std::optional<size_t>>(), 2u);
-        EXPECT_EQ(vmInfo[0].at("ram").as<std::optional<size_t>>(), 2048u);
-        EXPECT_EQ(vmInfo[0].at("ram_idle").as<std::optional<size_t>>(), 2048u);
+        EXPECT_EQ(vmInfo[0].at("cpu").as<size_t>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("cpu_idle").as<size_t>(), 2u);
+        EXPECT_EQ(vmInfo[0].at("ram").as<size_t>(), 2048u);
+        EXPECT_EQ(vmInfo[0].at("ram_idle").as<size_t>(), 2048u);
     }
 }
 
 TEST(AgentLogic, jobNotFound)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::AgentStarted);
 
@@ -130,6 +133,7 @@ TEST(AgentLogic, jobNotFound)
 
 TEST(AgentLogic, vmNotFound)
 {
+    t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
     const VmId nonExistingVmId = 42;

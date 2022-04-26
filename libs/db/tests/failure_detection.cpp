@@ -1,5 +1,6 @@
 #include "libs/db/include/pg_task_storage.h"
 #include "libs/db/impl/test_utils.h"
+#include "libs/db/tests/helpers.h"
 
 #include <libs/postgres/include/pg_pool.h>
 #include <libs/postgres/include/helpers.h>
@@ -51,6 +52,7 @@ void checkStatuses(
 
 TEST(FailureDetector, restartStaleAllocatingVms)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::Allocating);
 
@@ -78,6 +80,7 @@ TEST(FailureDetector, restartStaleAllocatingVms)
 
 TEST(FailureDetector, terminateStaleAllocatingVms)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::Allocating);
 
@@ -109,6 +112,7 @@ TEST(FailureDetector, terminateStaleAllocatingVms)
 
 TEST(FailureDetector, terminateVmsWithInactiveAgents)
 {
+    t::setupEnv();
     auto pool = pg::createPool();
     const auto vmId = t::insertVm(pool, VmStatus::AgentStarted);
 

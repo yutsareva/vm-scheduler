@@ -60,7 +60,7 @@ std::ostream& operator<<(
 std::ostream& operator<<(std::ostream& out, const AllocatedVmInfos& vms)
 {
     out << "[";
-    for (const auto vm : vms) {
+    for (const auto& vm : vms) {
         out << "{id: " << vm.id << ", "
             << "type: " << vm.type << "}, ";
     }

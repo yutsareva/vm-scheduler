@@ -1,4 +1,5 @@
 @startuml
+
 [*] -[bold]down-> Queued
 Queued : initial status
 Queued : after task addition
@@ -37,5 +38,6 @@ Error: client error
 InternalError -> [*]
 InternalError: scheduler\ninternal error
 Cancelled -down-> [*]
-Cancelled: the job is canclled by user\nor the job exceeded its time limit\n(detected by FD)
+Cancelled: the job is cancelled by user\nor the job exceeded its time limit\n(detected by FD)
+
 @enduml
