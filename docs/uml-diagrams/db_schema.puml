@@ -1,0 +1,77 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "**job_statuses_log**" {
+  --
+  ""job_id"": //integer [FK]//
+  ""status"": //scheduler.job_status //
+  *""timestamp"": //timestamp with time zone //
+}
+
+entity "**jobs**" {
+  + ""id"": //serial [PK]//
+  --
+  *""status"": //scheduler.job_status //
+  *""task_id"": //integer [FK]//
+  *""cpu"": //integer //
+  *""ram"": //integer //
+  *""estimation"": //interval //
+  *""options"": //jsonb //
+  ""result_url"": //text //
+  ""message"": //text //
+  *""created"": //timestamp with time zone //
+  ""started"": //timestamp with time zone //
+  ""finished"": //timestamp with time zone //
+  ""vm_id"": //integer [FK]//
+  *""restart_count"": //integer //
+}
+
+entity "**plan**" {
+  + ""id"": //serial [PK]//
+  --
+  *""created"": //timestamp with time zone //
+  *""updated"": //timestamp with time zone //
+  ""backend_id"": //text //
+}
+
+entity "**tasks**" {
+  + ""id"": //serial [PK]//
+  --
+  *""job_count"": //integer //
+  *""settings"": //jsonb //
+  *""image_version"": //text //
+  *""client_id"": //text //
+}
+
+entity "**vm_statuses_log**" {
+  --
+  ""vm_id"": //integer [FK]//
+  ""status"": //scheduler.vm_status //
+  *""timestamp"": //timestamp with time zone //
+}
+
+entity "**vms**" {
+  + ""id"": //serial [PK]//
+  --
+  *""status"": //scheduler.vm_status //
+  *""cpu"": //integer //
+  *""ram"": //integer //
+  *""cpu_idle"": //integer //
+  *""ram_idle"": //integer //
+  ""cloud_vm_id"": //text //
+  ""cloud_vm_type"": //text //
+  *""created"": //timestamp with time zone //
+  *""last_status_update"": //timestamp with time zone //
+  ""agent_activity"": //timestamp with time zone //
+  *""restart_count"": //integer //
+}
+
+"**job_statuses_log**"   }--  "**jobs**"
+
+"**jobs**"   }--  "**tasks**"
+
+"**jobs**"   }--  "**vms**"
+
+"**vm_statuses_log**"   }--  "**vms**"
+@enduml
