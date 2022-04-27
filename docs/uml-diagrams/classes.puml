@@ -19,10 +19,10 @@ class FifoJobOrderer
 class MinminJobOrderer
 class MaxminJobOrderer
 interface AllocatorStratagy
-class BestFitAllocatorStratagy
-class WorstFitAllocatorStratagy
-class NextFitAllocatorStratagy
-class FirstFitAllocatorStratagy
+class BestFit
+class WorstFit
+class NextFit
+class FirstFit
 
 Scheduler *-- VmAssigner
 VmAssigner *-- JobOrderer
@@ -30,10 +30,10 @@ JobOrderer <|.. FifoJobOrderer
 JobOrderer <|.. MinminJobOrderer
 JobOrderer <|.. MaxminJobOrderer
 VmAssigner *-- AllocatorStratagy
-AllocatorStratagy <|.. BestFitAllocatorStratagy
-AllocatorStratagy <|.. WorstFitAllocatorStratagy
-AllocatorStratagy <|.. NextFitAllocatorStratagy
-AllocatorStratagy <|.. FirstFitAllocatorStratagy
+AllocatorStratagy <|.. BestFit
+AllocatorStratagy <|.. WorstFit
+AllocatorStratagy <|.. NextFit
+AllocatorStratagy <|.. FirstFit
 VmAssigner *-- SlotSelector
 
 class FailureDetector
