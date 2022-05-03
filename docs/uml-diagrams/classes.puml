@@ -13,12 +13,28 @@ CloudClient <|.. AwsCloudClient
 TaskStorage <.. Allocator
 
 class Scheduler
-interface VmAssigner
-class SimpleVmAssigner
+class VmAssigner
+interface JobOrderer
+class FifoJobOrderer
+class MinminJobOrderer
+class MaxminJobOrderer
+interface AllocatorStratagy
+class BestFit
+class WorstFit
+class NextFit
+class FirstFit
 
 Scheduler *-- VmAssigner
-VmAssigner <|.. SimpleVmAssigner
-TaskStorage <.. Scheduler
+VmAssigner *-- JobOrderer
+JobOrderer <|.. FifoJobOrderer
+JobOrderer <|.. MinminJobOrderer
+JobOrderer <|.. MaxminJobOrderer
+VmAssigner *-- AllocatorStratagy
+AllocatorStratagy <|.. BestFit
+AllocatorStratagy <|.. WorstFit
+AllocatorStratagy <|.. NextFit
+AllocatorStratagy <|.. FirstFit
+VmAssigner *-- SlotSelector
 
 class FailureDetector
 Allocator <.. FailureDetector
