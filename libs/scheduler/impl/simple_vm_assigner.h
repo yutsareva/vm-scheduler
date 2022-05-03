@@ -7,8 +7,11 @@ namespace vm_scheduler {
 
 class SimpleVmAssigner : public VmAssigner {
 public:
-    using VmAssigner::VmAssigner;
+    explicit SimpleVmAssigner(State state) : state_(std::move(state)) {};
     StateChange assign() noexcept override;
+
+private:
+    const State state_;
 };
 
 } // namespace vm_scheduler

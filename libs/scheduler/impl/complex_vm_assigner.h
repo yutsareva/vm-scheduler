@@ -5,13 +5,13 @@
 
 namespace vm_scheduler {
 
-enum class OrdererType {
+enum class JobOrdering {
     Fifo /*"fifo"*/,
     MinMin /*"minmin"*/,
     MaxMin /*"maxmin"*/,
 };
 
-OrdererType ordererTypeFromString(const std::string& s) {
+JobOrdering jobOrderingFromString(const std::string& s) {
     const static std::unordered_map<std::string, OrdererType> map = {
         {"fifo", OrdererType::Fifo},
         {"minmin", OrdererType::MinMin},
@@ -21,25 +21,26 @@ OrdererType ordererTypeFromString(const std::string& s) {
 }
 
 struct ComplexVmAssignerConfig {
-    OrdererType ordererType;
+    JobOrdering jobOrdering;
+    AllocationStrategy allocationStrategy;
 };
 
 ComplexVmAssignerConfig createComplexVmAssignerConfig()
 {
     return ComplexVmAssignerConfig{
-        .ordererType = ordererTypeFromString(getFromEnvOrDefault(
-            "VMS_ORDERER_TYPE", "fifo")),
+        .jobOrdering = jobOrderingFromString(getFromEnvOrDefault(
+            "VMS_JOB_ORDERING", "fifo")),
 
     };
 }
 
 class ComplexVmAssigner : public VmAssigner {
 public:
-//    using VmAssigner::VmAssigner;
-    ComplexVmAssigner(const ComplexVmAssignerConfig& config);
+    ComplexVmAssigner(const ComplexVmAssignerConfig& config, State state);
     StateChange assign() noexcept override;
 private:
-    SchedulingOrderer orderer_;
+    OrderedJobs orderedJobs_;
+    JobAllocator jobAllocator_;
 };
 
 } // namespace vm_scheduler

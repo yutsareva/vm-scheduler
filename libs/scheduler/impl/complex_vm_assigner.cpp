@@ -2,40 +2,38 @@
 
 namespace vm_scheduler {
 
-ComplexVmAssigner::ComplexVmAssigner(const ComplexVmAssignerConfig& config)
-    orderer_(createSchedulingOrderer(config.type))
-{
-
-}
+ComplexVmAssigner::ComplexVmAssigner(const ComplexVmAssignerConfig& config, State state)
+    : orderedJobs_(createOrderedJobs(config.jobOrdering, std::move(state.queuedJobs)))
+    , jobAllocator_(createJobAllocator(config.allocationStrategy, std::move(state.vms)))
+{ }
 
 StateChange ComplexVmAssigner::assign() noexcept
 {
-    orderer_.reorder(state_.queuedJobs);
-
     JobToVm vmAssignments;
-    vmAssignments.reserve(state_.queuedJobs.size());
-
-    for (const auto& job: state_.queuedJobs) {
-
-        vmAssignments[job.id] = DesiredSlot{
-            .total = job.requiredCapacity,
-            .idle = {0_cores, 0_MB},
-        };
-    }
-    std::vector<VmId> vmsToTerminate;
-    for (const auto& vm: state_.vms) {
-        if (vm.totalCapacity == vm.idleCapacity) {
-            vmsToTerminate.push_back(vm.id);
+//    vmAssignments.reserve(state_.queuedJobs.size());
+    std::vector<OrderedJobs::iterator> unallocatedJobs;
+    for (it = orderedJobs_.begin(); it != orderedJobs_.end(); ++it) {
+        const auto maybeAssignedVmId = jobAllocator_.allocate(job.requiredCapacity);
+        if (maybeAssignedVmId) {
+            vmAssignments[job.id] = *maybeAssignedVmId;
+        } else {
+            unallocatedJobs.push_back(it);
         }
     }
-
-    return {
-        .vmAssignments = vmAssignments,
-        .vmsToTerminate = vmsToTerminate,
-        .vmCapacityUpdates = {},
-    };
-
-    return {};
+//    std::vector<VmId> vmsToTerminate;
+//    for (const auto& vm: state_.vms) {
+//        if (vm.totalCapacity == vm.idleCapacity) {
+//            vmsToTerminate.push_back(vm.id);
+//        }
+//    }
+//
+//    return {
+//        .vmAssignments = vmAssignments,
+//        .vmsToTerminate = vmsToTerminate,
+//        .vmCapacityUpdates = {},
+//    };
+//
+//    return {};
 }
 
 } // namespace vm_scheduler

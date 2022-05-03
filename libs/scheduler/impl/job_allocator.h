@@ -9,7 +9,7 @@ namespace vm_scheduler {
 class JobAllocator {
 public:
     virtual JobAllocator(std::vector<ActiveVm> vms) = 0;
-    virtual ~JobAllocator = default;
+    virtual ~JobAllocator() = default;
     virtual std::optional<VmId> allocate(const QueuedJobInfo& job) = 0;
 };
 
@@ -52,5 +52,28 @@ public:
 private:
     std::list<ActiveVm> vms_;
 };
+
+enum class AllocationStrategy {
+    FirstFit /*"firstfit"*/;
+    NextFit /*"nextfit"*/;
+    WorstFit /*"worstfit"*/;
+    BestFit /*"bestfit"*/;
+};
+
+std::unique_ptr<JobAllocator> createJobAllocator(
+    const AllocationStrategy type, std::vector<ActiveVm> vms)
+{
+    switch (type) {
+        case AllocationStrategy::FirstFit:
+            return std::make_unique<FirstFit>(std::move(vms));
+        case AllocationStrategy::NextFit:
+            return std::make_unique<NextFit>(std::move(vms));
+        case AllocationStrategy::WorstFit:
+            return std::make_unique<WorstFit>(std::move(vms));
+        case AllocationStrategy::BestFit:
+            return std::make_unique<BestFit>(std::move(vms));
+    }
+
+}
 
 } // namespace vm_scheduler
