@@ -20,11 +20,11 @@ VmAssignerType vmAssignerTypeFromString(const std::string& str)
     return map.at(str);
 }
 
-std::unique_ptr<VmAssigner> createVmAssigner(const VmAssignerType type, const State& state)
+std::unique_ptr<VmAssigner> createVmAssigner(const VmAssignerType type, State state)
 {
     switch (type) {
         case VmAssignerType::Simple:
-            return std::make_unique<SimpleVmAssigner>(state);
+            return std::make_unique<SimpleVmAssigner>(std::move(state));
     }
 }
 

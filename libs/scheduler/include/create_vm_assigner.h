@@ -18,6 +18,6 @@ enum class VmAssignerType {
 const char* toString(const VmAssignerType v);
 VmAssignerType vmAssignerTypeFromString(const std::string& str);
 
-std::unique_ptr<VmAssigner> createVmAssigner(const VmAssignerType type, const State& state);
+std::unique_ptr<VmAssigner> createVmAssigner(const VmAssignerType type, State state);
 
 } // namespace vm_scheduler

@@ -19,14 +19,14 @@ void Scheduler::schedule() noexcept
     }
     INFO() << "New plan id: " << planIdResult.ValueRefOrThrow();
 
-    const auto currentStateResult = taskStorage_->getCurrentState();
+    auto currentStateResult = taskStorage_->getCurrentState();
     if (currentStateResult.IsFailure()) {
         ERROR() << "Failed to get current state: " << what(currentStateResult.ErrorRefOrThrow());
         return;
     }
     INFO() << "Current state: " << currentStateResult.ValueRefOrThrow();
 
-    const auto vmAssigner = createVmAssigner(config_.vmAssignerType, currentStateResult.ValueRefOrThrow());
+    const auto vmAssigner = createVmAssigner(config_.vmAssignerType, std::move(currentStateResult).ValueOrThrow());
     const auto stateChange = vmAssigner->assign();
     INFO() << "State change: " << stateChange;
 
