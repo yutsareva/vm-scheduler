@@ -3,6 +3,7 @@
 #include <libs/state/include/state.h>
 
 #include <cassert>
+#include <vector>
 
 namespace vm_scheduler {
 
@@ -24,7 +25,9 @@ public:
 
     std::pair<JobToVm, DesiredSlotMap> select(std::vector<QueuedJobInfo> jobs)
     {
-        std::sort(jobs.begin(), jobs.end());
+        std::sort(jobs.begin(), jobs.end(), [](const QueuedJobInfo& lhs, const QueuedJobInfo& rhs) {
+            return lhs.requiredCapacity > rhs.requiredCapacity;
+        });
         std::vector<std::pair<DesiredSlot, std::vector<JobId>>> desiredSlots;
 
         for (const auto& job: jobs) {
@@ -73,7 +76,7 @@ public:
         DesiredSlotId nextDesiredSlotId = DesiredSlotId{0};
 
         for (const auto& [desiredSlot, jobIds]: desiredSlots) {
-            desiredSlotMap[nextDesiredSlotId] = desiredSlot;
+            desiredSlotMap.emplace(nextDesiredSlotId, desiredSlot);
             for (const auto jobId: jobIds) {
                 assignments[jobId] = nextDesiredSlotId;
             }
@@ -88,6 +91,7 @@ private:
         const auto it = std::lower_bound(
             possibleSlots_.begin(),
             possibleSlots_.end(),
+            slot,
             [](const SlotCapacity& lhs, const SlotCapacity& rhs) {
                 return lhs.fits(rhs);
             });

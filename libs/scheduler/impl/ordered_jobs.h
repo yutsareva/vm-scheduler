@@ -26,7 +26,6 @@ public:
     FifoOrderedJobs(std::vector<QueuedJobInfo>&& jobs) :
         OrderedJobs(std::move(jobs))
     {
-        std::sort(jobs_.begin(), jobs_.end());
     }
 };
 
@@ -38,8 +37,8 @@ public:
         std::sort(
             jobs_.begin(),
             jobs_.end(),
-            [](const QueuedJobInfo& first, const QueuedJobInfo& second) {
-                return first.requiredCapacity < second.requiredCapacity;
+            [](const QueuedJobInfo& lhs, const QueuedJobInfo& rhs) {
+                return lhs.requiredCapacity < rhs.requiredCapacity;
             });
     }
 };
@@ -52,8 +51,8 @@ public:
         std::sort(
             jobs_.rbegin(),
             jobs_.rend(),
-            [](const QueuedJobInfo& first, const QueuedJobInfo& second) {
-                return first.requiredCapacity < second.requiredCapacity;
+            [](const QueuedJobInfo& lhs, const QueuedJobInfo& rhs) {
+                return lhs.requiredCapacity < rhs.requiredCapacity;
             });
     }
 };
