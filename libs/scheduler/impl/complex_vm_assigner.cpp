@@ -29,7 +29,7 @@ StateChange ComplexVmAssigner::assign() noexcept
     }
 
     auto jobToVm, desiredSlotMap = vmSlotSelector_.select(std::move(unallocatedJobs));
-    jobToVm.insert(jobToExistingVms.begin(), jobToExistingVms.end());
+    jobToVm.merge(jobToExistingVms);
 
     return {
         .jobToVm = std::move(jobToVm),
