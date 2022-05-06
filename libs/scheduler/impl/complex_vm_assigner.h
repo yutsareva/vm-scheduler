@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libs/scheduler/include/vm_assigner.h"
+#include "libs/scheduler/impl/vm_slot_selector.h"
 
 
 namespace vm_scheduler {
@@ -36,11 +37,12 @@ ComplexVmAssignerConfig createComplexVmAssignerConfig()
 
 class ComplexVmAssigner : public VmAssigner {
 public:
-    ComplexVmAssigner(const ComplexVmAssignerConfig& config, State state);
+    ComplexVmAssigner(const ComplexVmAssignerConfig& config, State state, std::vector<SlotCapacity> possibleSlots);
     StateChange assign() noexcept override;
 private:
     OrderedJobs orderedJobs_;
     JobAllocator jobAllocator_;
+    VmSlotSelector vmSlotSelector_;
 };
 
 } // namespace vm_scheduler

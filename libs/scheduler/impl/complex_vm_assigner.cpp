@@ -1,39 +1,42 @@
-#include "libs/scheduler/impl/simple_vm_assigner.h"
+#include "libs/scheduler/impl/complex_vm_assigner.h"
 
 namespace vm_scheduler {
 
-ComplexVmAssigner::ComplexVmAssigner(const ComplexVmAssignerConfig& config, State state)
-    : orderedJobs_(createOrderedJobs(config.jobOrdering, std::move(state.queuedJobs)))
-    , jobAllocator_(createJobAllocator(config.allocationStrategy, std::move(state.vms)))
+ComplexVmAssigner::ComplexVmAssigner(
+        const ComplexVmAssignerConfig& config,
+        State state,
+        std::vector<SlotCapacity> possibleSlots)
+    : orderedJobs_(
+          createOrderedJobs(config.jobOrdering, std::move(state.queuedJobs)))
+    , jobAllocator_(
+          createJobAllocator(config.allocationStrategy, std::move(state.vms)))
+    , vmSlotSelector_(std::move(possibleSlots))
 { }
 
 StateChange ComplexVmAssigner::assign() noexcept
 {
-    JobToVm vmAssignments;
-//    vmAssignments.reserve(state_.queuedJobs.size());
-    std::vector<OrderedJobs::iterator> unallocatedJobs;
-    for (it = orderedJobs_.begin(); it != orderedJobs_.end(); ++it) {
-        const auto maybeAssignedVmId = jobAllocator_.allocate(job.requiredCapacity);
+    JobToVm jobToExistingVms;
+    //    vmAssignments.reserve(state_.queuedJobs.size());
+    std::vector<QueuedJobInfo> unallocatedJobs;
+    for (auto it = orderedJobs_.begin(); it != orderedJobs_.end(); ++it) {
+        const auto maybeAssignedVmId =
+            jobAllocator_.allocate(it->requiredCapacity);
         if (maybeAssignedVmId) {
-            vmAssignments[job.id] = *maybeAssignedVmId;
+            jobToExistingVms[it->id] = *maybeAssignedVmId;
         } else {
-            unallocatedJobs.push_back(it);
+            unallocatedJobs.push_back(*it);
         }
     }
-//    std::vector<VmId> vmsToTerminate;
-//    for (const auto& vm: state_.vms) {
-//        if (vm.totalCapacity == vm.idleCapacity) {
-//            vmsToTerminate.push_back(vm.id);
-//        }
-//    }
-//
-//    return {
-//        .vmAssignments = vmAssignments,
-//        .vmsToTerminate = vmsToTerminate,
-//        .vmCapacityUpdates = {},
-//    };
-//
-//    return {};
+
+    auto jobToVm, desiredSlotMap = vmSlotSelector_.select(std::move(unallocatedJobs));
+    jobToVm.insert(jobToExistingVms.begin(), jobToExistingVms.end());
+
+    return {
+        .jobToVm = std::move(jobToVm),
+        .desiredSlotMap = std::move(desiredSlotMap);
+//        .allocatedVmIdToUpdatedIdleCapacity = ; TBD
+//        .vmsToTerminate = ; TBD
+    };
 }
 
 } // namespace vm_scheduler

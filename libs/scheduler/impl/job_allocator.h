@@ -11,6 +11,7 @@ public:
     virtual JobAllocator(std::vector<ActiveVm> vms) = 0;
     virtual ~JobAllocator() = default;
     virtual std::optional<VmId> allocate(const QueuedJobInfo& job) = 0;
+//    virtual std::vector<QueuedJobInfo> getIdleVms() = 0;
 };
 
 class FirstFit : public JobAllocator {

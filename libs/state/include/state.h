@@ -13,7 +13,7 @@
 
 namespace vm_scheduler {
 
-struct DesiredSlot {
+struct DesiredSlo {
     SlotCapacity total;
     SlotCapacity idle;
 
@@ -22,22 +22,38 @@ struct DesiredSlot {
 
 std::ostream& operator<<(std::ostream& out, const DesiredSlot& desiredSlot);
 
-using VmInfo = std::variant<VmId, DesiredSlot>;
-using JobToVm = std::unordered_map<JobId, VmInfo>;
+struct DesiredSlotId {
+    explicit constexpr DesiredSlotId(size_t id)
+        : value(id) {};
 
-struct VmCapacityUpdate {
-    VmId id;
-    SlotCapacity idleCapacity;
-
-    bool operator==(const VmCapacityUpdate&) const = default;
+    size_t value;
 };
 
-std::ostream& operator<<(std::ostream& out, const VmCapacityUpdate& vmCapacityUpdate);
+using DesiredSlotMap = std::unorderedMap<DesiredSlotId, DesiredSlot>;
+using VmInfo = std::variant<VmId, DesiredSlotId>;
+using JobToVm = std::unordered_map<JobId, VmInfo>;
+using VmIdToCapacity = std::unorderedMap<VmId, SlotCapacity>;
+
+//struct JobVmAssignments {
+//JobToVm jobToVm;
+//DesiredSlotMap desiredSlotMap;
+//VmIdToCapacity allocatedVmIdToUpdatedIdleCapacity;
+//};
+
+//struct VmCapacityUpdate {
+//    VmId id;
+//    SlotCapacity idleCapacity;
+//
+//    bool operator==(const VmCapacityUpdate&) const = default;
+//};
+
+//std::ostream& operator<<(std::ostream& out, const VmCapacityUpdate& vmCapacityUpdate);
 
 struct StateChange {
-    JobToVm vmAssignments;
+    JobToVm jobToVm;
+    DesiredSlotMap desiredSlotMap;
+    VmIdToCapacity allocatedVmIdToUpdatedIdleCapacity;
     std::vector<VmId> vmsToTerminate;
-    std::vector<VmCapacityUpdate> vmCapacityUpdates;
 
     bool operator==(const StateChange&) const = default;
 };
