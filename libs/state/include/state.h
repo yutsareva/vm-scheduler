@@ -13,7 +13,7 @@
 
 namespace vm_scheduler {
 
-struct DesiredSlo {
+struct DesiredSlot {
     SlotCapacity total;
     SlotCapacity idle;
 
@@ -25,14 +25,27 @@ std::ostream& operator<<(std::ostream& out, const DesiredSlot& desiredSlot);
 struct DesiredSlotId {
     explicit constexpr DesiredSlotId(size_t id)
         : value(id) {};
+    bool operator==(const DesiredSlotId&) const = default;
 
     size_t value;
 };
 
-using DesiredSlotMap = std::unorderedMap<DesiredSlotId, DesiredSlot>;
+} // namespace vm_scheduler
+
+template<>
+struct std::hash<vm_scheduler::DesiredSlotId> {
+    size_t operator()(const vm_scheduler::DesiredSlotId& id) const
+    {
+        return std::hash<size_t>()(id.value);
+    }
+};
+
+namespace vm_scheduler {
+
+using DesiredSlotMap = std::unordered_map<DesiredSlotId, DesiredSlot>;
 using VmInfo = std::variant<VmId, DesiredSlotId>;
 using JobToVm = std::unordered_map<JobId, VmInfo>;
-using VmIdToCapacity = std::unorderedMap<VmId, SlotCapacity>;
+using VmIdToCapacity = std::unordered_map<VmId, SlotCapacity>;
 
 //struct JobVmAssignments {
 //JobToVm jobToVm;

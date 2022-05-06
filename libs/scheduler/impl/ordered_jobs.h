@@ -6,15 +6,16 @@ namespace vm_scheduler {
 
 class OrderedJobs {
 public:
-    virtual OrderedJobs(std::vector<QueuedJobInfo>&& jobs) = 0;
-
+    OrderedJobs(std::vector<QueuedJobInfo> jobs)
+        : jobs_(std::move(jobs))
+    {}
     using iterator = std::vector<QueuedJobInfo>::iterator;
     using const_iterator = std::vector<QueuedJobInfo>::const_iterator;
 
     iterator begin() { return jobs_.begin(); }
-    const_iterator begin() { return jobs_.begin(); }
+    const_iterator begin() const { return jobs_.begin(); }
     iterator end() { return jobs_.end(); }
-    const_iterator end() { return jobs_.end(); }
+    const_iterator end() const { return jobs_.end(); }
 
 protected:
     std::vector<QueuedJobInfo> jobs_;
@@ -22,8 +23,8 @@ protected:
 
 class FifoOrderedJobs : public OrderedJobs {
 public:
-    FifoOrderedJobs(std::vector<QueuedJobInfo>&& jobs) override :
-        jobs_(std::move(jobs))
+    FifoOrderedJobs(std::vector<QueuedJobInfo>&& jobs) :
+        OrderedJobs(std::move(jobs))
     {
         std::sort(jobs_.begin(), jobs_.end());
     }
@@ -31,41 +32,41 @@ public:
 
 class MinMinOrderedJobs : public OrderedJobs {
 public:
-    MinMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs) override :
-        jobs_(std::move(jobs))
+    MinMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs) :
+        OrderedJobs(std::move(jobs))
     {
         std::sort(
             jobs_.begin(),
             jobs_.end(),
             [](const QueuedJobInfo& first, const QueuedJobInfo& second) {
-                return first.capacity < second.capacity;
+                return first.requiredCapacity < second.requiredCapacity;
             });
     }
 };
 
 class MaxMinOrderedJobs : public OrderedJobs {
 public:
-    MaxMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs) override :
-        jobs_(std::move(jobs))
+    MaxMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs) :
+        OrderedJobs(std::move(jobs))
     {
         std::sort(
             jobs_.rbegin(),
             jobs_.rend(),
             [](const QueuedJobInfo& first, const QueuedJobInfo& second) {
-                return first.capacity < second.capacity;
+                return first.requiredCapacity < second.requiredCapacity;
             });
     }
 };
 
-std::unique_ptr<SchedulingOrderer> createOrderedJobs(
-    const OrdererType type, std::vector<QueuedJobInfo>&& jobs)
+std::unique_ptr<OrderedJobs> createOrderedJobs(
+    const JobOrdering type, std::vector<QueuedJobInfo>&& jobs)
 {
     switch (type) {
-        case OrdererType::Fifo:
+        case JobOrdering::Fifo:
             return std::make_unique<FifoOrderedJobs>(std::move(jobs));
-        case OrdererType::MinMin:
+        case JobOrdering::MinMin:
             return std::make_unique<MinMinOrderedJobs>(std::move(jobs));
-        case OrdererType::MaxMin:
+        case JobOrdering::MaxMin:
             return std::make_unique<MaxMinOrderedJobs>(std::move(jobs));
     }
 }

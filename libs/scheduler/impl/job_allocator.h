@@ -1,22 +1,24 @@
 #pragma once
 
 #include "libs/scheduler/include/vm_assigner.h"
+#include "libs/scheduler/impl/complex_vm_assigner_config.h"
 
+#include <forward_list>
+#include <list>
 #include <optional>
 
 namespace vm_scheduler {
 
 class JobAllocator {
 public:
-    virtual JobAllocator(std::vector<ActiveVm> vms) = 0;
     virtual ~JobAllocator() = default;
     virtual std::optional<VmId> allocate(const QueuedJobInfo& job) = 0;
-//    virtual std::vector<QueuedJobInfo> getIdleVms() = 0;
+    //    virtual std::vector<QueuedJobInfo> getIdleVms() = 0;
 };
 
 class FirstFit : public JobAllocator {
 public:
-    FirstFit(std::vector<ActiveVm> vms) override;
+    FirstFit(std::vector<ActiveVm> vms);
     std::optional<VmId> allocate(const QueuedJobInfo& job) override;
 
 private:
@@ -25,7 +27,7 @@ private:
 
 class NextFit : public JobAllocator {
 public:
-    NextFit(std::vector<ActiveVm> vms) override;
+    NextFit(std::vector<ActiveVm> vms);
 
     std::optional<VmId> allocate(const QueuedJobInfo& job) override;
 
@@ -36,7 +38,7 @@ private:
 
 class WorstFit : public JobAllocator {
 public:
-    WorstFit(std::vector<ActiveVm> vms) override;
+    WorstFit(std::vector<ActiveVm> vms);
 
     std::optional<VmId> allocate(const QueuedJobInfo& job) override;
 
@@ -46,19 +48,12 @@ private:
 
 class BestFit : public JobAllocator {
 public:
-    BestFit(std::vector<ActiveVm> vms) override;
+    BestFit(std::vector<ActiveVm> vms);
 
     std::optional<VmId> allocate(const QueuedJobInfo& job) override;
 
 private:
     std::list<ActiveVm> vms_;
-};
-
-enum class AllocationStrategy {
-    FirstFit /*"firstfit"*/;
-    NextFit /*"nextfit"*/;
-    WorstFit /*"worstfit"*/;
-    BestFit /*"bestfit"*/;
 };
 
 std::unique_ptr<JobAllocator> createJobAllocator(
@@ -74,7 +69,6 @@ std::unique_ptr<JobAllocator> createJobAllocator(
         case AllocationStrategy::BestFit:
             return std::make_unique<BestFit>(std::move(vms));
     }
-
 }
 
 } // namespace vm_scheduler

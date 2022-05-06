@@ -7,11 +7,15 @@ StateChange SimpleVmAssigner::assign() noexcept
     JobToVm vmAssignments;
     vmAssignments.reserve(state_.queuedJobs.size());
 
+    DesiredSlotMap desiredSlotMap;
+    DesiredSlotId nextDesiredSlotId = DesiredSlotId{0};
     for (const auto& job: state_.queuedJobs) {
-        vmAssignments[job.id] = DesiredSlot{
+        vmAssignments[job.id] = nextDesiredSlotId;
+        desiredSlotMap.emplace(nextDesiredSlotId,DesiredSlot{
             .total = job.requiredCapacity,
             .idle = {0_cores, 0_MB},
-        };
+        });
+        nextDesiredSlotId = DesiredSlotId{nextDesiredSlotId.value + 1};
     }
     std::vector<VmId> vmsToTerminate;
     for (const auto& vm: state_.vms) {
@@ -20,10 +24,11 @@ StateChange SimpleVmAssigner::assign() noexcept
         }
     }
 
-    return {
-        .vmAssignments = vmAssignments,
+    return StateChange{
+        .jobToVm = std::move(vmAssignments),
+        .desiredSlotMap = std::move(desiredSlotMap),
+        .allocatedVmIdToUpdatedIdleCapacity = {},
         .vmsToTerminate = vmsToTerminate,
-        .vmCapacityUpdates = {},
     };
 }
 

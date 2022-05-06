@@ -2,11 +2,11 @@
 
 namespace vm_scheduler {
 
-FirstFit::FirstFit(std::vector<ActiveVm> vms) override : vms_(std::move(vms)) { }
+FirstFit::FirstFit(std::vector<ActiveVm> vms) : vms_(std::move(vms)) { }
 
-std::optional<VmId> FirstFit::allocate(const QueuedJobInfo& job) override
+std::optional<VmId> FirstFit::allocate(const QueuedJobInfo& job)
 {
-    for (const auot& vm: vms) {
+    for (auto& vm: vms_) {
         if (job.requiredCapacity.fits(vm.idleCapacity)) {
             vm.idleCapacity -= job.requiredCapacity;
             return vm.id;
@@ -15,37 +15,38 @@ std::optional<VmId> FirstFit::allocate(const QueuedJobInfo& job) override
     return std::nullopt;
 }
 
-NextFit::NextFit(std::vector<ActiveVm> vms) override :
-    vms_(std::move(vms)),
-    iter_(vms.begin())
+NextFit::NextFit(std::vector<ActiveVm> vms)
+    : vms_(std::move(vms)), iter_(vms.begin())
 { }
 
-std::optional<VmId> NextFit::allocate(const QueuedJobInfo& job) override
+std::optional<VmId> NextFit::allocate(const QueuedJobInfo& job)
 {
     const auto startIter = iter_;
-    while (iter_ != vms.end()) {
+    while (iter_ != vms_.end()) {
         if (job.requiredCapacity.fits(iter_->idleCapacity)) {
             iter_->idleCapacity -= job.requiredCapacity;
-            return vm.id;
+            return iter_->id;
         }
     }
-    iter_ = vms.begin();
-    while (iter_ != startiter) {
+    iter_ = vms_.begin();
+    while (iter_ != startIter) {
         if (job.requiredCapacity.fits(iter_->idleCapacity)) {
             iter_->idleCapacity -= job.requiredCapacity;
-            return vm.id;
+            return iter_->id;
         }
     }
     return std::nullopt;
 }
 
-WorstFit::WorstFit(std::vector<ActiveVm> vms) override
+WorstFit::WorstFit(std::vector<ActiveVm> vms)
 {
-    std::sort(vms.rbegin(), vms.rend()); // TODO sort by idle!
-    vms_(vms.begin(), vms.end()); // TODO: move
+    std::sort(vms.rbegin(), vms.rend(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
+        return rhs.idleCapacity < lhs.idleCapacity;
+    });
+    vms_ = {vms.begin(), vms.end()}; // TODO: move
 }
 
-std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job) override
+std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
 {
     auto prevIt = vms_.before_begin();
     for (auto it = vms_.begin(); it != vms_.end(); ++it) {
@@ -69,31 +70,31 @@ std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job) override
     return std::nullopt;
 }
 
-BestFit(std::vector<ActiveVm> vms) override
+BestFit::BestFit(std::vector<ActiveVm> vms)
 {
-    std::sort(vms.begin(), vms.end()); // TODO sort by idle
-    vms_(vms.begin(), vms.end()); // TODO: move
+    std::sort(vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
+            return lhs.idleCapacity < rhs.idleCapacity;
+        });
+    vms_ = {vms.begin(), vms.end()}; // TODO: move
 }
 
-std::optional<VmId> BestFit::allocate(const QueuedJobInfo& job) override
+std::optional<VmId> BestFit::allocate(const QueuedJobInfo& job)
 {
-    auto prevIt = vms_.before_begin();
     for (auto it = vms_.begin(); it != vms_.end(); ++it) {
         if (job.requiredCapacity.fits(it->idleCapacity)) {
             it->idleCapacity -= job.requiredCapacity;
             auto activeVm = std::move(*it);
-            auto nextIt = vms_.erase(prev);
+            auto lastIt = vms_.erase(it);
 
-            while (prevIt != vms_.rbegin()) {
-                if (activeVm.idleCapacity >= prevIt->idleCapacity) {
-                    auto insertedIt = vms_.insert(nextIt, std::move(activeVm));
+            for (auto curIt = vms_.begin(); curIt != lastIt; ++curIt) {
+                if (curIt->idleCapacity >= activeVm.idleCapacity) {
+                    auto insertedIt = vms_.insert(curIt, std::move(activeVm));
                     return insertedIt->id;
                 }
-                --prevIt;
-                --nextIt;
             }
+            auto insertedIt = vms_.insert(lastIt, std::move(activeVm));
+            return insertedIt->id;
         }
-        prevIt = it;
     }
     return std::nullopt;
 }

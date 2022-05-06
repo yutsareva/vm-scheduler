@@ -18,9 +18,9 @@ StateChange ComplexVmAssigner::assign() noexcept
     JobToVm jobToExistingVms;
     //    vmAssignments.reserve(state_.queuedJobs.size());
     std::vector<QueuedJobInfo> unallocatedJobs;
-    for (auto it = orderedJobs_.begin(); it != orderedJobs_.end(); ++it) {
+    for (auto it = orderedJobs_->begin(); it != orderedJobs_->end(); ++it) {
         const auto maybeAssignedVmId =
-            jobAllocator_.allocate(it->requiredCapacity);
+            jobAllocator_->allocate(*it);
         if (maybeAssignedVmId) {
             jobToExistingVms[it->id] = *maybeAssignedVmId;
         } else {
@@ -28,12 +28,12 @@ StateChange ComplexVmAssigner::assign() noexcept
         }
     }
 
-    auto jobToVm, desiredSlotMap = vmSlotSelector_.select(std::move(unallocatedJobs));
+    auto [jobToVm, desiredSlotMap] = vmSlotSelector_.select(std::move(unallocatedJobs));
     jobToVm.merge(jobToExistingVms);
 
     return {
         .jobToVm = std::move(jobToVm),
-        .desiredSlotMap = std::move(desiredSlotMap);
+        .desiredSlotMap = std::move(desiredSlotMap),
 //        .allocatedVmIdToUpdatedIdleCapacity = ; TBD
 //        .vmsToTerminate = ; TBD
     };

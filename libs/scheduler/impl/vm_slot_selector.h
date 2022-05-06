@@ -2,6 +2,8 @@
 
 #include <libs/state/include/state.h>
 
+#include <cassert>
+
 namespace vm_scheduler {
 
 class VmSlotSelector {
@@ -12,9 +14,11 @@ public:
         std::sort(possibleSlots.begin(), possibleSlots.end());
         for (size_t i = 0; i + 1 < possibleSlots.size(); ++i) {
             assert(
-                possibleSlots[i].cpu.value == 2 * possibleSlots[i + 1].cpu.value);
+                possibleSlots[i].cpu.count() ==
+                2 * possibleSlots[i + 1].cpu.count());
             assert(
-                possibleSlots[i].ram.value == 2 * possibleSlots[i + 1].ram.value);
+                possibleSlots[i].ram.count() ==
+                2 * possibleSlots[i + 1].ram.count());
         }
     }
 
@@ -24,15 +28,13 @@ public:
         std::vector<std::pair<DesiredSlot, std::vector<JobId>>> desiredSlots;
 
         for (const auto& job: jobs) {
-            std::vector < std::pair<DesiredSlot, std::vector<JobId>>::iterator
-                              bestFitDesiredSlot = desiredSlots.end();
+            std::vector<std::pair<DesiredSlot, std::vector<JobId>>>::iterator
+                bestFitDesiredSlot = desiredSlots.end();
             for (auto it = desiredSlots.begin(); it != desiredSlots.end(); ++it) {
-                if (job.requiredCapacity.fits(it->first.idleCapacity)) {
+                if (job.requiredCapacity.fits(it->first.idle)) {
                     if (bestFitDesiredSlot == desiredSlots.end()) {
                         bestFitDesiredSlot = it;
-                    } else if (
-                        bestFitDesiredSlot->first.idleCapacity <
-                        it->first.idleCapacity) {
+                    } else if (bestFitDesiredSlot->first.idle < it->first.idle) {
                         bestFitDesiredSlot = it;
                     }
                 }
@@ -46,16 +48,17 @@ public:
                     .total = slot,
                     .idle = slot - job.requiredCapacity,
                 };
-                desiredSlots.push_back({desiredSlot, job.id});
+                desiredSlots.push_back({desiredSlot, {job.id}});
             }
 
             while (desiredSlots.size() >= 2 &&
-                   desiredSlots.rbegin()->first.totalCapcity ==
-                       (desiredSlots.rbegin() + 1)->first.totalCapcity &&
-                   desiredSlots.rbegin()->first.totalCapcity.cpu.value <
-                       possibleSlots_.back().cpu.value) {
-                (desiredSlots.rbegin() + 1)->first.cpu.value *= 2;
-                (desiredSlots.rbegin() + 1)->first.ram.value *= 2;
+                   desiredSlots.rbegin()->first.total ==
+                       (desiredSlots.rbegin() + 1)->first.total &&
+                   desiredSlots.rbegin()->first.total.cpu.count() <
+                       possibleSlots_.back().cpu.count()) {
+                (desiredSlots.rbegin() + 1)->first.idle +=
+                    (desiredSlots.rbegin() + 1)->first.total;
+                (desiredSlots.rbegin() + 1)->first.total *= 2;
                 (desiredSlots.rbegin() + 1)
                     ->second.insert(
                         (desiredSlots.rbegin() + 1)->second.end(),
@@ -67,24 +70,27 @@ public:
 
         DesiredSlotMap desiredSlotMap;
         JobToVm assignments;
-        DesiredSlotId nextDesiredSlotId = {0};
+        DesiredSlotId nextDesiredSlotId = DesiredSlotId{0};
 
-        for (const auto& [desiredSlot, jobIds] : desiredSlots) {
+        for (const auto& [desiredSlot, jobIds]: desiredSlots) {
             desiredSlotMap[nextDesiredSlotId] = desiredSlot;
-            for (const jobId : jobIds) {
+            for (const auto jobId: jobIds) {
                 assignments[jobId] = nextDesiredSlotId;
             }
-            nextDesiredSlotId = {nextDesiredSlotId.value + 1};
+            nextDesiredSlotId = DesiredSlotId{nextDesiredSlotId.value + 1};
         }
 
         return {std::move(assignments), std::move(desiredSlotMap)};
     }
 
 private:
-    SlotCapacity getMinFitSlot(const SlotCapacity& slot)
-    {
+    SlotCapacity getMinFitSlot(const SlotCapacity& slot) {
         const auto it = std::lower_bound(
-            possibleSlots_.begin(), possibleSlots_.end(), SlotCapacity::fits);
+            possibleSlots_.begin(),
+            possibleSlots_.end(),
+            [](const SlotCapacity& lhs, const SlotCapacity& rhs) {
+                return lhs.fits(rhs);
+            });
         if (it == possibleSlots_.end()) {
             return *possibleSlots_.rbegin();
         }
