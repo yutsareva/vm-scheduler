@@ -25,7 +25,8 @@ private:
         const VmId vmId, const Aws::EC2::Model::InstanceType& vmType) noexcept;
     Result<AwsVmInfo> createInstance(
         const std::string& vmToken,
-        const Aws::EC2::Model::InstanceType& vmType) noexcept;
+        const Aws::EC2::Model::InstanceType& vmType,
+        const VmId vmId) noexcept;
     Result<void> startInstance(const AwsVmInfo& vmInfo) noexcept;
     Aws::EC2::Model::InstanceType instanceTypeForSlot(
         const SlotCapacity& slot) const noexcept;

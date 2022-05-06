@@ -15,7 +15,11 @@ namespace vm_scheduler {
 struct AwsClientConfig {
     std::string accessKeyId;
     std::string secretKey;
-    std::string sessionToken = "";
+};
+
+struct AgentEcrCredentials {
+    std::string accessKeyId;
+    std::string secretKey;
 };
 
 AwsClientConfig createAwsClientConfig();
@@ -39,6 +43,9 @@ struct AwsInstancesConfig {
     InstanceTypeInfos vmTypes;
     Tags vmTags;
     std::string tokenPrefix;
+    std::string agentDockerImageVersion;
+    std::string vmsAddress;
+    AgentEcrCredentials creds;
 };
 
 AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client);

@@ -19,9 +19,8 @@ TEST(AwsCloudClient, simple)
         return;
     }
 
-    // Allocate the cheapest class of instances in tests
-    setenv("VMS_AWS_INSTANCE_CLASS", "t2.", true);
-    setenv("AWS_EC2_AMI_ID", "ami-0d4df4d5d1febee7c", true);
+    // Allocate the cheapest class of instances in tests (for ARM)
+    setenv("VMS_AWS_INSTANCE_CLASS", "a1.", true);
 
     AwsCloudClient client;
 

@@ -8,10 +8,12 @@ namespace vm_scheduler {
 
 namespace {
 
-const std::string DEFAULT_AWS_EC2_AMI_ID = "ami-02a92e06fd643c11b";
+// custom AMI with preinstalled docker and aws cli for ARM
+const std::string DEFAULT_AWS_EC2_AMI_ID = "ami-0aaa7d236c8b7d9b9";
 const std::string DEFAULT_AWS_INSTANCE_CLASS = "c6g.";
-const std::string DEFAULT_AWS_INSTANCE_TAGS = "owner:vms-prod";
+const std::string DEFAULT_AWS_INSTANCE_TAGS = "owner:vms-test";
 const std::string DEFAULT_AWS_VM_TOKEN_PREFIX = "vms-prod";
+const std::string DEFAULT_AGENT_DOCKER_IMAGE_VERSION = "latest";
 
 std::unordered_map<std::string, std::string> getVmTags()
 {
@@ -64,6 +66,14 @@ AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client)
         .vmTags = getVmTags(),
         .tokenPrefix = getFromEnvOrDefault(
             "VMS_AWS_VM_TOKEN_PREFIX", DEFAULT_AWS_VM_TOKEN_PREFIX),
+        .agentDockerImageVersion = getFromEnvOrDefault(
+            "VMS_AGENT_DOCKER_IMAGE_VERSION", DEFAULT_AGENT_DOCKER_IMAGE_VERSION),
+        .vmsAddress = getFromEnvOrThrow("VMS_ADDRESS"),
+        .creds =
+            AgentEcrCredentials{
+                .accessKeyId = getFromEnvOrThrow("VMS_AGENT_ECR_ACCESS_KEY_ID"),
+                .secretKey = getFromEnvOrThrow("VMS_AGENT_ECR_SECRET_KEY"),
+            },
     };
 }
 

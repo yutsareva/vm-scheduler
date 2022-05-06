@@ -13,15 +13,19 @@ FailureDetector::FailureDetector(TaskStorage* taskStorage, Allocator* allocator)
 void FailureDetector::handleStaleAllocatingVms_() noexcept
 {
     const auto restartStaleAllocatingVmsResult =
-        taskStorage_->restartStaleAllocatingVms(config_.allocationTimeLimit, config_.common.vmRestartAttemptCount);
+        taskStorage_->restartStaleAllocatingVms(
+            config_.allocationTimeLimit, config_.common.vmRestartAttemptCount);
 
     if (restartStaleAllocatingVmsResult.IsFailure()) {
         ERROR() << "Failed to terminate stale allocating VMs: "
                 << what(restartStaleAllocatingVmsResult.ErrorRefOrThrow());
     }
 
-    const auto terminateStaleAllocatingVmsResult = taskStorage_->terminateStaleAllocatingVms(
-        config_.allocationTimeLimit, config_.common.vmRestartAttemptCount, config_.common.jobRestartAttemptCount);
+    const auto terminateStaleAllocatingVmsResult =
+        taskStorage_->terminateStaleAllocatingVms(
+            config_.allocationTimeLimit,
+            config_.common.vmRestartAttemptCount,
+            config_.common.jobRestartAttemptCount);
     if (terminateStaleAllocatingVmsResult.IsFailure()) {
         ERROR() << "Failed to terminate stale allocating VMs: "
                 << what(terminateStaleAllocatingVmsResult.ErrorRefOrThrow());
@@ -30,19 +34,24 @@ void FailureDetector::handleStaleAllocatingVms_() noexcept
 
 void FailureDetector::handleInactiveAgents_() noexcept
 {
-    const auto terminateInactiveVmsResult = taskStorage_->terminateVmsWithInactiveAgents(
-        config_.agentInactivityTimeLimit, config_.common.jobRestartAttemptCount);
+    const auto terminateInactiveVmsResult =
+        taskStorage_->terminateVmsWithInactiveAgents(
+            config_.agentInactivityTimeLimit,
+            config_.common.jobRestartAttemptCount);
     if (terminateInactiveVmsResult.IsFailure()) {
-        ERROR() << "Failed to terminate VMs with inactive agents: " << what(terminateInactiveVmsResult.ErrorRefOrThrow());
+        ERROR() << "Failed to terminate VMs with inactive agents: "
+                << what(terminateInactiveVmsResult.ErrorRefOrThrow());
     }
 }
 
 void FailureDetector::handleVmsWithoutAgents_() noexcept
 {
     const auto terminateVmsWithoutAgentsResult =
-        taskStorage_->terminateVmsWithoutAgents(config_.agentStartupTimeLimit, config_.common.jobRestartAttemptCount);
+        taskStorage_->terminateVmsWithoutAgents(
+            config_.agentStartupTimeLimit, config_.common.jobRestartAttemptCount);
     if (terminateVmsWithoutAgentsResult.IsFailure()) {
-        ERROR() << "Failed to terminate VMs without agents: " << what(terminateVmsWithoutAgentsResult.ErrorRefOrThrow());
+        ERROR() << "Failed to terminate VMs without agents: "
+                << what(terminateVmsWithoutAgentsResult.ErrorRefOrThrow());
     }
 }
 

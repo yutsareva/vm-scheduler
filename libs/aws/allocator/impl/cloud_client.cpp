@@ -37,8 +37,7 @@ AwsCloudClient::AwsCloudClient(const AwsClientConfig& config) : options_()
     Aws::Client::ClientConfiguration clientConfig;
     clientConfig.verifySSL = false;
     client_ = std::make_unique<Aws::EC2::EC2Client>(
-        Aws::Auth::AWSCredentials{
-            config.accessKeyId, config.secretKey, config.sessionToken},
+        Aws::Auth::AWSCredentials{config.accessKeyId, config.secretKey, ""},
         clientConfig);
 
     vmConfig_ = createAwsInstancesConfig(*client_);
@@ -91,7 +90,7 @@ Result<AwsVmInfo> AwsCloudClient::allocate(
     const VmId vmId, const Aws::EC2::Model::InstanceType& vmType) noexcept
 {
     const auto vmToken = toString(vmConfig_.tokenPrefix, "-", vmId);
-    auto vmInfo = createInstance(vmToken, vmType);
+    auto vmInfo = createInstance(vmToken, vmType, vmId);
     if (vmInfo.IsFailure()) {
         return vmInfo;
     }
@@ -119,17 +118,39 @@ Result<AwsVmInfo> AwsCloudClient::allocate(
 
 namespace {
 
+std::string getUserData(
+    const std::string& agentDockerImageVersion,
+    const std::string& vmsAddress,
+    const AgentEcrCredentials& creds,
+    const VmId vmId)
+{
+    return maps::base64Encode(toString(
+        "#!/bin/bash\n",
+        "set -e -x\n",
+        std::format("aws configure set aws_access_key_id {}\n", creds.accessKeyId),
+        std::format("aws configure set aws_secret_access_key {}\n", creds.secretKey),
+        "aws configure set default.region us-east-2\n",
+        "aws configure set default.output json\n",
+        "sudo aws ecr get-login-password --region us-east-2 | ",
+        "sudo docker login --username AWS --password-stdin 545868914688.dkr.ecr.us-east-2.amazonaws.com\n",
+        std::format(
+            "sudo docker run -e VMS_ADDRESS={} -e VM_ID={}", vmsAddress, vmId),
+        std::format(
+            " --network host 545868914688.dkr.ecr.us-east-2.amazonaws.com/vm-agent:{}\n",
+            agentDockerImageVersion)));
+}
+
 Aws::EC2::Model::RunInstancesRequest createRunRequest(
     const std::string& vmToken,
-    const Tags& tags,
+    const AwsInstancesConfig& config,
     const Aws::EC2::Model::InstanceType& vmType,
-    const std::string& amiId)
+    const VmId vmId)
 {
     Aws::EC2::Model::TagSpecification tagSpecs;
     tagSpecs = tagSpecs.WithResourceType(Aws::EC2::Model::ResourceType::instance);
 
     Aws::Vector<Aws::EC2::Model::Tag> awsTags;
-    for (const auto& [key, value]: tags) {
+    for (const auto& [key, value]: config.vmTags) {
         Aws::EC2::Model::Tag tag;
         tag.WithKey(key).WithValue(value);
         awsTags.emplace_back(std::move(tag));
@@ -137,11 +158,19 @@ Aws::EC2::Model::RunInstancesRequest createRunRequest(
     tagSpecs.WithTags(awsTags);
 
     Aws::EC2::Model::RunInstancesRequest request;
+
+    Aws::EC2::Model::IamInstanceProfileSpecification iamSpec;
+    iamSpec.WithName("vmsAgentExecutorRole");
+
     request.WithInstanceType(vmType)
         .WithPlacement(getPlacement())
-        .WithImageId(amiId)
+        .WithImageId(config.amiId)
         .WithTagSpecifications({tagSpecs})
         .WithClientToken(vmToken) // makes allocation idempotent
+        .WithUserData(getUserData(
+            config.agentDockerImageVersion, config.vmsAddress, config.creds, vmId))
+        .WithIamInstanceProfile(iamSpec)
+        .WithKeyName("vms_instance")
         .WithMinCount(1)
         .WithMaxCount(1);
 
@@ -152,10 +181,10 @@ Aws::EC2::Model::RunInstancesRequest createRunRequest(
 
 Result<AwsVmInfo> AwsCloudClient::createInstance(
     const std::string& vmToken,
-    const Aws::EC2::Model::InstanceType& vmType) noexcept
+    const Aws::EC2::Model::InstanceType& vmType,
+    const VmId vmId) noexcept
 {
-    const auto runRequest =
-        createRunRequest(vmToken, vmConfig_.vmTags, vmType, vmConfig_.amiId);
+    const auto runRequest = createRunRequest(vmToken, vmConfig_, vmType, vmId);
 
     const auto vmTypeName =
         Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(
@@ -184,12 +213,12 @@ Result<AwsVmInfo> AwsCloudClient::createInstance(
             ": empty vms list"));
     }
 
-    const auto vmId = vms[0].GetInstanceId();
-    INFO() << "Successfully created ec2 vm " << vmId
+    const auto awsVmId = vms[0].GetInstanceId();
+    INFO() << "Successfully created ec2 vm " << awsVmId
            << " with type: " << vmTypeName << " based on ami "
            << runRequest.GetImageId();
 
-    return Result{AwsVmInfo{.type = vmType, .id = vmId}};
+    return Result{AwsVmInfo{.type = vmType, .id = awsVmId}};
 }
 
 Result<void> AwsCloudClient::startInstance(const AwsVmInfo& vmInfo) noexcept
