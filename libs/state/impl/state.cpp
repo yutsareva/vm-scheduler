@@ -23,25 +23,25 @@ std::ostream& operator<<(std::ostream& out, const State& state)
 std::ostream& operator<<(std::ostream& out, const StateChange& stateChange)
 {
     out << "job assignments: [";
-    for (const auto& [jobId, vmInfo] : stateChange.vmAssignments) {
+    for (const auto& [jobId, vmInfo] : stateChange.jobToVm) {
         out << "job id: " << jobId << " -> "
             << (std::holds_alternative<VmId>(vmInfo)
                     ? toString("existing VM with id ", std::get<VmId>(vmInfo), ", ")
-                    : toString("desired VM {", std::get<DesiredSlot>(vmInfo), "}, "));
+                    : toString("desired VM id: ", std::get<DesiredSlotId>(vmInfo).value, ", "));
     }
-//    out << "], VMs to terminate: [" << joinSeq(stateChange.vmsToTerminate);
+    out << "], desired VMs: [";
+    for (const auto& [desiredSlotId, desiredSlot] : stateChange.desiredSlotMap) {
+        out << "{ id: " << desiredSlotId.value << ", "
+            << "total capacity: " << desiredSlot.total << ", "
+            << "idle capacity: " << desiredSlot.idle << " }";
+    }
     out << "], VM capacities updates: [";
-    for (const auto& vmCapacityUpdate : stateChange.vmCapacityUpdates) {
-        out << vmCapacityUpdate << ", ";
+    for (const auto& [vmId, capacity] : stateChange.updatedIdleCapacities) {
+        out << "{ id: " << vmId << ", "
+            << "new idle capacity: " << capacity << "} ";
     }
+    out << "], VMs to terminate: [" << joinSeq(stateChange.vmsToTerminate);
     out << "]";
-    return out;
-}
-
-std::ostream& operator<<(std::ostream& out, const VmCapacityUpdate& vmCapacityUpdate)
-{
-    out << "id: " << vmCapacityUpdate.id << ", "
-        << "idle capacity: " << vmCapacityUpdate.idleCapacity;
     return out;
 }
 

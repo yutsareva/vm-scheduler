@@ -34,7 +34,7 @@ StateChange ComplexVmAssigner::assign() noexcept
     return {
         .jobToVm = std::move(jobToVm),
         .desiredSlotMap = std::move(desiredSlotMap),
-//        .allocatedVmIdToUpdatedIdleCapacity = ; TBD
+//        .updatedIdleCapacities = ; TBD
 //        .vmsToTerminate = ; TBD
     };
 }

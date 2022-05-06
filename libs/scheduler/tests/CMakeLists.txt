@@ -24,6 +24,7 @@ target_link_libraries(
         gtest_main
         gmock_main
         lib_scheduler
+        lib_state
 )
 
 include(GoogleTest)

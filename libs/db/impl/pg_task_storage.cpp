@@ -172,24 +172,29 @@ Result<void> PgTaskStorage::commitPlanChange(
             "Current scheduling is not the newest one");
     }
 
-    auto terminateResult = terminateVms_(txn, state.vmsToTerminate);
+    const auto terminateResult = terminateVms_(txn, state.vmsToTerminate);
     if (terminateResult.IsFailure()) {
-        return Result<void>::Failure(std::move(terminateResult).ErrorOrThrow());
+        return Result<void>::Failure(terminateResult.ErrorRefOrThrow());
     }
 
-    auto vmUpdates = updateVmCapacities_(txn, state.vmCapacityUpdates);
+    const auto vmUpdates = updateVmCapacities_(txn, state.updatedIdleCapacities);
     if (vmUpdates.IsFailure()) {
-        return Result<void>::Failure(std::move(vmUpdates).ErrorOrThrow());
+        return Result<void>::Failure(vmUpdates.ErrorRefOrThrow());
     }
 
-    auto assignmentsResult = applyJobVmAssignments_(txn, state.vmAssignments);
+    const auto allocatedVms = allocateNewVms_(txn, state.desiredSlotMap);
+    if (allocatedVms.IsFailure()) {
+        return Result<void>::Failure(allocatedVms.ErrorRefOrThrow());
+    }
+
+    const auto assignmentsResult = applyJobVmAssignments_(txn, state.jobToVm, allocatedVms.ValueRefOrThrow());
     if (assignmentsResult.IsFailure()) {
-        return Result<void>::Failure(std::move(assignmentsResult).ErrorOrThrow());
+        return Result<void>::Failure(assignmentsResult.ErrorRefOrThrow());
     }
 
-    auto activityRefreshResult = refreshPlanActivityTs_(txn, planId);
+    const auto activityRefreshResult = refreshPlanActivityTs_(txn, planId);
     if (activityRefreshResult.IsFailure()) {
-        return Result<void>::Failure(std::move(activityRefreshResult).ErrorOrThrow());
+        return Result<void>::Failure(activityRefreshResult.ErrorRefOrThrow());
     }
 
     try {
@@ -304,18 +309,18 @@ Result<void> PgTaskStorage::terminateVms_(
 }
 
 Result<void> PgTaskStorage::updateVmCapacities_(
-    pqxx::transaction_base& txn, const std::vector<VmCapacityUpdate>& vmCapacityUpdates) noexcept
+    pqxx::transaction_base& txn, const VmIdToCapacity& updatedIdleCapacities) noexcept
 {
-    if (vmCapacityUpdates.empty()) {
+    if (updatedIdleCapacities.empty()) {
         return Result<void>::Success();
     }
 
     std::stringstream updateVmsQuery;
     updateVmsQuery << "UPDATE scheduler.vms AS v SET cpu_idle = n.cpu_idle, ram_idle = n.ram_idle FROM (VALUES ";
-    for (auto it = vmCapacityUpdates.begin(); it != vmCapacityUpdates.end(); ++it) {
-        updateVmsQuery << (it != vmCapacityUpdates.begin() ? ", " : "");
-        updateVmsQuery << "(" << it->idleCapacity.cpu.count() << ", "
-                       <<  it->idleCapacity.ram.count() << ", " << it->id << ")";
+    for (auto it = updatedIdleCapacities.begin(); it != updatedIdleCapacities.end(); ++it) {
+        updateVmsQuery << (it != updatedIdleCapacities.begin() ? ", " : "");
+        updateVmsQuery << "(" << it->second.cpu.count() << ", "
+                       <<  it->second.ram.count() << ", " << it->first << ")";
     }
     updateVmsQuery << ") AS n(cpu_idle, ram_idle, id) WHERE v.id = n.id;";
 
@@ -328,47 +333,47 @@ Result<void> PgTaskStorage::updateVmCapacities_(
     }
 }
 
-Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, const JobToVm& vmAssignments) noexcept
+Result<std::unordered_map<DesiredSlotId, VmId>> PgTaskStorage::allocateNewVms_(
+    pqxx::transaction_base& txn, const DesiredSlotMap& desiredSlots) noexcept
+{
+    std::unordered_map<DesiredSlotId, VmId> allocatedVms;
+    for (const auto& [desiredSlotId, slot] : desiredSlots) {
+        const auto addVmsQuery = toString(
+            "INSERT INTO scheduler.vms (status, cpu, ram, cpu_idle, ram_idle, created, last_status_update) ",
+            "VALUES('", toString(VmStatus::PendingAllocation), "', ",
+            slot.total.cpu.count(), ", ", slot.total.ram.count(), ", ",
+            slot.idle.cpu.count(), ", ", slot.idle.ram.count(), ", NOW(), NOW()) RETURNING id;");
+
+        try {
+            const auto result = pg::execQuery(addVmsQuery, txn);
+            allocatedVms.emplace(desiredSlotId, result[0].at("id").as<VmId>());
+        } catch (const std::exception& ex) {
+            return Result<std::unordered_map<DesiredSlotId, VmId>>::Failure<PgException>(toString(
+                "Unexpected exception while inserting new vm row: ", ex.what()));
+        }
+    }
+
+    return Result{std::move(allocatedVms)};
+}
+
+Result<void> PgTaskStorage::applyJobVmAssignments_(
+    pqxx::transaction_base& txn, const JobToVm& vmAssignments, std::unordered_map<DesiredSlotId, VmId> slotsToVms) noexcept
 {
     if (vmAssignments.empty()) {
         return Result<void>::Success();
     }
 
-    std::vector<JobId> jobIds;
-    jobIds.reserve(vmAssignments.size());
-    std::vector<VmId> vmIds;
-    vmIds.reserve(vmAssignments.size());
-
-    for (const auto& [jobId, vm] : vmAssignments) {
-        jobIds.push_back(jobId);
-
-        if (std::holds_alternative<DesiredSlot>(vm)) {
-            const auto& desiredSlot = std::get<DesiredSlot>(vm);
-            const auto addVmsQuery = toString(
-                "INSERT INTO scheduler.vms (status, cpu, ram, cpu_idle, ram_idle, created, last_status_update) ",
-                "VALUES('", toString(VmStatus::PendingAllocation), "', ",
-                desiredSlot.total.cpu.count(), ", ", desiredSlot.total.ram.count(), ", ",
-                desiredSlot.idle.cpu.count(), ", ", desiredSlot.idle.ram.count(), ", NOW(), NOW()) RETURNING id;");
-
-            try {
-                const auto result = pg::execQuery(addVmsQuery, txn);
-                vmIds.push_back(result[0].at("id").as<VmId>());
-            } catch (const std::exception& ex) {
-                return Result<void>::Failure<PgException>(toString(
-                    "Unexpected exception while inserting new vm row: ", ex.what()));
-            }
-        } else {
-            vmIds.push_back(std::get<VmId>(vm));
-        }
-    }
     std::stringstream tmpTable;
-    for (size_t i = 0; i < jobIds.size(); ++i) {
-        if (i != 0) {
-            tmpTable << ", ";
+    for (const auto& [jobId, vmOrSlotId] : vmAssignments) {
+        //        if (i != 0) {
+        //            tmpTable << ", ";
+        //        }
+        if (std::holds_alternative<DesiredSlotId>(vmOrSlotId)) {
+            tmpTable << "(" << jobId << ", " << slotsToVms[std::get<DesiredSlotId>(vmOrSlotId)] << ")";
+        } else {
+            tmpTable << "(" << jobId << ", " << std::get<VmId>(vmOrSlotId) << ")";
         }
-        tmpTable << "(" << jobIds[i] << ", " << vmIds[i] << ")";
     }
-
 
     const auto updateJobQuery = toString(
         "UPDATE scheduler.jobs AS t SET ",
@@ -384,7 +389,7 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(pqxx::transaction_base& txn, 
     } catch (const std::exception& ex) {
         return Result<void>::Failure<PgException>(toString(
             "Unexpected exception while setting status '", toString(JobStatus::Scheduled),
-            "' for jobs ", joinSeq(jobIds), ": ", ex.what()));
+            "' for jobs: ", ex.what()));
     }
     return Result<void>::Success();
 }

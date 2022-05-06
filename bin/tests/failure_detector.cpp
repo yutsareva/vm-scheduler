@@ -107,7 +107,6 @@ TEST(fail_tasks, non_working_agent)
 TEST(TerminateUntracked, simple)
 {
     setupEnv();
-    Postgres postgres("vms_db_schema.sql");
 
     const Config config = {
         .allocationInterval = 1s,
@@ -126,7 +125,7 @@ TEST(TerminateUntracked, simple)
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
-        std::make_unique<PgTaskStorage>(createPool(postgres)),
+        std::make_unique<PgTaskStorage>(pg::createPool()),
         std::move(cloudClientMock));
 
     std::this_thread::sleep_for(0.5s);

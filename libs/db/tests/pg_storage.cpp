@@ -89,7 +89,7 @@ TEST(CommitPlanChange, fulScenario)
             },
         },
         .vmsToTerminate = { },
-        .vmCapacityUpdates = { },
+        .updatedIdleCapacities = { },
     };
 
     auto commitResult = pgTaskStorage.commitPlanChange(stateChange, planIdResult.ValueRefOrThrow());

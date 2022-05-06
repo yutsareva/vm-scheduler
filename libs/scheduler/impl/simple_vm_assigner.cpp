@@ -27,7 +27,7 @@ StateChange SimpleVmAssigner::assign() noexcept
     return StateChange{
         .jobToVm = std::move(vmAssignments),
         .desiredSlotMap = std::move(desiredSlotMap),
-        .allocatedVmIdToUpdatedIdleCapacity = {},
+        .updatedIdleCapacities = {},
         .vmsToTerminate = vmsToTerminate,
     };
 }

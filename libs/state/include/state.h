@@ -47,25 +47,10 @@ using VmInfo = std::variant<VmId, DesiredSlotId>;
 using JobToVm = std::unordered_map<JobId, VmInfo>;
 using VmIdToCapacity = std::unordered_map<VmId, SlotCapacity>;
 
-//struct JobVmAssignments {
-//JobToVm jobToVm;
-//DesiredSlotMap desiredSlotMap;
-//VmIdToCapacity allocatedVmIdToUpdatedIdleCapacity;
-//};
-
-//struct VmCapacityUpdate {
-//    VmId id;
-//    SlotCapacity idleCapacity;
-//
-//    bool operator==(const VmCapacityUpdate&) const = default;
-//};
-
-//std::ostream& operator<<(std::ostream& out, const VmCapacityUpdate& vmCapacityUpdate);
-
 struct StateChange {
     JobToVm jobToVm;
     DesiredSlotMap desiredSlotMap;
-    VmIdToCapacity allocatedVmIdToUpdatedIdleCapacity;
+    VmIdToCapacity updatedIdleCapacities;
     std::vector<VmId> vmsToTerminate;
 
     bool operator==(const StateChange&) const = default;

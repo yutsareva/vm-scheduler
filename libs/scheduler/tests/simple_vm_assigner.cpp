@@ -82,7 +82,7 @@ TEST(SimpleVmAssigner, assign)
 //            },
 //        .vmsToTerminate = {5},
 //        .desiredSlotMap = {},
-//        .allocatedVmIdToUpdatedIdleCapacity = {},
+//        .updatedIdleCapacities = {},
 //    };
 //
 //    EXPECT_EQ(stateChange, expectedStateChange);
@@ -141,7 +141,7 @@ TEST(SimpleVmAssigner, emptyJobs)
 //    const auto expectedStateChange = StateChange{
 //        .vmAssignments = {},
 //        .vmsToTerminate = {5, 3},
-//        .vmCapacityUpdates = {},
+//        .updatedIdleCapacities = {},
 //    };
 //
 //    EXPECT_EQ(stateChange, expectedStateChange);
@@ -186,7 +186,7 @@ TEST(SimpleVmAssigner, emptyVms)
 //                },
 //            },
 //        .vmsToTerminate = {},
-//        .vmCapacityUpdates = {},
+//        .updatedIdleCapacities = {},
 //    };
 //
 //    EXPECT_EQ(stateChange, expectedStateChange);
