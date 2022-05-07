@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <string>
 
-
 namespace vm_scheduler {
 
 class MegaBytes {

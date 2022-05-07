@@ -16,7 +16,10 @@ public:
 
     static Result Success(T value) { return {std::move(value)}; }
 
-    static Result Failure(std::exception_ptr error) { return Result{std::move(error)}; }
+    static Result Failure(std::exception_ptr error)
+    {
+        return Result{std::move(error)};
+    }
 
     template<typename TException>
     static Result Failure(const std::string& errorString)
@@ -29,14 +32,18 @@ public:
         return Result{std::make_exception_ptr(RuntimeException(errorString))};
     }
 
-    bool IsFailure() const { return std::holds_alternative<std::exception_ptr>(result_); }
+    bool IsFailure() const
+    {
+        return std::holds_alternative<std::exception_ptr>(result_);
+    }
 
     bool IsSuccess() const { return std::holds_alternative<T>(result_); }
 
     T ValueOrThrow() &&
     {
         if (IsFailure()) {
-            std::rethrow_exception(std::get<std::exception_ptr>(std::move(result_)));
+            std::rethrow_exception(
+                std::get<std::exception_ptr>(std::move(result_)));
         }
         return std::get<T>(std::move(result_));
     }
@@ -91,7 +98,10 @@ public:
 
     explicit Result(std::exception_ptr error) : error_(std::move(error)) { }
 
-    static Result Failure(std::exception_ptr error) { return Result{std::move(error)}; }
+    static Result Failure(std::exception_ptr error)
+    {
+        return Result{std::move(error)};
+    }
 
     template<typename TException>
     static Result Failure(const std::string& errorString)

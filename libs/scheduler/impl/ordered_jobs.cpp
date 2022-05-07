@@ -21,10 +21,10 @@ MaxMinOrderedJobs::MaxMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
     : OrderedJobs(std::move(jobs))
 {
     std::sort(
-        jobs_.rbegin(),
-        jobs_.rend(),
+        jobs_.begin(),
+        jobs_.end(),
         [](const QueuedJobInfo& lhs, const QueuedJobInfo& rhs) {
-            return lhs.requiredCapacity < rhs.requiredCapacity;
+            return lhs.requiredCapacity > rhs.requiredCapacity;
         });
 }
 

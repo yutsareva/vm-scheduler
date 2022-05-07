@@ -26,7 +26,6 @@ AllocationStrategy allocationStrategyFromString(const std::string& s)
     return map.at(s);
 }
 
-
 ComplexVmAssignerConfig createComplexVmAssignerConfig()
 {
     return ComplexVmAssignerConfig{

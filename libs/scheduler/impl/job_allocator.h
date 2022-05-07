@@ -1,7 +1,7 @@
 #pragma once
 
-#include "libs/scheduler/include/vm_assigner.h"
 #include "libs/scheduler/impl/complex_vm_assigner_config.h"
+#include "libs/scheduler/include/vm_assigner.h"
 
 #include <forward_list>
 #include <list>

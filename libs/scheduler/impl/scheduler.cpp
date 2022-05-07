@@ -7,12 +7,13 @@
 
 namespace vm_scheduler {
 
-Scheduler::Scheduler(BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots)
+Scheduler::Scheduler(
+    BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots)
     : id_(std::move(id))
     , taskStorage_(taskStorage)
     , config_(createSchedulerConfig())
     , possibleSlots_(std::move(possibleSlots))
-{}
+{ }
 
 void Scheduler::schedule() noexcept
 {
@@ -34,7 +35,10 @@ void Scheduler::schedule() noexcept
     INFO() << "Current state: " << currentStateResult.ValueRefOrThrow();
 
     const auto vmAssigner = createVmAssigner(
-        config_.vmAssignerType, std::move(currentStateResult).ValueOrThrow(), config_.complexVmAssignerConfig, possibleSlots_);
+        config_.vmAssignerType,
+        std::move(currentStateResult).ValueOrThrow(),
+        config_.complexVmAssignerConfig,
+        possibleSlots_);
     const auto stateChange = vmAssigner->assign();
     INFO() << "State change: " << stateChange;
 

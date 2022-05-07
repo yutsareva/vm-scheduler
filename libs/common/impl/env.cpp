@@ -4,7 +4,8 @@
 
 namespace vm_scheduler {
 
-std::string getFromEnvOrDefault(const std::string& envVarName, const std::string& defaultValue)
+std::string getFromEnvOrDefault(
+    const std::string& envVarName, const std::string& defaultValue)
 {
     auto envVarValue = std::getenv(envVarName.c_str());
     if (envVarValue) {
@@ -28,7 +29,8 @@ std::string getFromEnvOrThrow(const std::string& envVarName)
     if (envVarValue) {
         return envVarValue;
     }
-    throw std::runtime_error(toString("Env var `", envVarName, "` must be specified."));
+    throw std::runtime_error(
+        toString("Env var `", envVarName, "` must be specified."));
 }
 
 } // namespace vm_scheduler

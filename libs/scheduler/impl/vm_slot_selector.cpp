@@ -7,12 +7,13 @@ namespace vm_scheduler {
 VmSlotSelector::VmSlotSelector(const std::vector<SlotCapacity>& possibleSlots)
     : possibleSlots_(possibleSlots)
 {
+    assert(!possibleSlots.empty());
     assert(std::is_sorted(possibleSlots.begin(), possibleSlots.end()));
     for (size_t i = 0; i + 1 < possibleSlots.size(); ++i) {
         assert(
-            possibleSlots[i].cpu.count() == 2 * possibleSlots[i + 1].cpu.count());
+            2 * possibleSlots[i].cpu.count() == possibleSlots[i + 1].cpu.count());
         assert(
-            possibleSlots[i].ram.count() == 2 * possibleSlots[i + 1].ram.count());
+            2 * possibleSlots[i].ram.count() == possibleSlots[i + 1].ram.count());
     }
 }
 
@@ -90,8 +91,9 @@ SlotCapacity VmSlotSelector::getMinFitSlot(const SlotCapacity& slot)
         possibleSlots_.end(),
         slot,
         [](const SlotCapacity& lhs, const SlotCapacity& rhs) {
-            return lhs.fits(rhs);
+            return !rhs.fits(lhs);
         });
+
     if (it == possibleSlots_.end()) {
         return *possibleSlots_.rbegin();
     }

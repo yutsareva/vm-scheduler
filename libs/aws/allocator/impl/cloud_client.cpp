@@ -23,7 +23,7 @@ namespace {
 
 Aws::EC2::Model::Placement getPlacement()
 {
-    // TODO: in a bright future Allocater should allocate instances in different availability zones
+    // TODO: in a bright future Allocator should allocate instances in different availability zones
     // for jobs from one task
     Aws::EC2::Model::Placement placement;
     placement.SetAvailabilityZone("us-east-2a");

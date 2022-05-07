@@ -1,4 +1,4 @@
-#include "libs/scheduler/impl/complex_vm_assigner.h"
+#include "libs/scheduler/impl/max_min_best_fit_vm_assigner.h"
 
 namespace vm_scheduler {
 

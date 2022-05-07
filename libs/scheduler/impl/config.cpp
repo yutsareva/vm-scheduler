@@ -10,7 +10,7 @@ constexpr size_t DEFAULT_SCHEDULING_INTERVAL_S{60};
 SchedulerConfig createSchedulerConfig()
 {
     const auto vmAssignerType = vmAssignerTypeFromString(getFromEnvOrDefault(
-                   "VMS_ASSIGNER_TYPE", toString(VmAssignerType::Simple)));
+        "VMS_ASSIGNER_TYPE", toString(VmAssignerType::Complex)));
     return {
         .schedulingInterval = std::chrono::seconds{getFromEnvOrDefault(
             "VMS_SCHEDULING_INTERVAL_S", DEFAULT_SCHEDULING_INTERVAL_S)},

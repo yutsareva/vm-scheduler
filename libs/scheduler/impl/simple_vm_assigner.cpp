@@ -11,10 +11,12 @@ StateChange SimpleVmAssigner::assign() noexcept
     DesiredSlotId nextDesiredSlotId = DesiredSlotId{0};
     for (const auto& job: state_.queuedJobs) {
         vmAssignments[job.id] = nextDesiredSlotId;
-        desiredSlotMap.emplace(nextDesiredSlotId,DesiredSlot{
-            .total = job.requiredCapacity,
-            .idle = {0_cores, 0_MB},
-        });
+        desiredSlotMap.emplace(
+            nextDesiredSlotId,
+            DesiredSlot{
+                .total = job.requiredCapacity,
+                .idle = {0_cores, 0_MB},
+            });
         nextDesiredSlotId = DesiredSlotId{nextDesiredSlotId.value + 1};
     }
     std::vector<VmId> vmsToTerminate;
