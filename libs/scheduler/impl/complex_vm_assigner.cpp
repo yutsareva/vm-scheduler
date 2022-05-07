@@ -16,7 +16,6 @@ ComplexVmAssigner::ComplexVmAssigner(
 StateChange ComplexVmAssigner::assign() noexcept
 {
     JobToVm jobToExistingVms;
-    //    vmAssignments.reserve(state_.queuedJobs.size());
     std::vector<QueuedJobInfo> unallocatedJobs;
     for (auto it = orderedJobs_->begin(); it != orderedJobs_->end(); ++it) {
         const auto maybeAssignedVmId =
@@ -34,8 +33,8 @@ StateChange ComplexVmAssigner::assign() noexcept
     return {
         .jobToVm = std::move(jobToVm),
         .desiredSlotMap = std::move(desiredSlotMap),
-//        .updatedIdleCapacities = ; TBD
-//        .vmsToTerminate = ; TBD
+        .updatedIdleCapacities = jobAllocator_->getVmsWithUpdatedCapacities(),
+        .vmsToTerminate = jobAllocator_->getIdleVms(),
     };
 }
 

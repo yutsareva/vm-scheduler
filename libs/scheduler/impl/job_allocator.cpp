@@ -9,10 +9,33 @@ std::optional<VmId> FirstFit::allocate(const QueuedJobInfo& job)
     for (auto& vm: vms_) {
         if (job.requiredCapacity.fits(vm.idleCapacity)) {
             vm.idleCapacity -= job.requiredCapacity;
+            updatedVmIds_.insert(vm.id);
             return vm.id;
         }
     }
     return std::nullopt;
+}
+
+VmIdToCapacity FirstFit::getVmsWithUpdatedCapacities()
+{
+    VmIdToCapacity updatedVmsCapacities;
+    for (const auto& vm : vms_) {
+        if (updatedVmIds_.contains(vm.id)) {
+            updatedVmsCapacities.emplace(vm.id, vm.idleCapacity);
+        }
+    }
+    return updatedVmsCapacities;
+}
+
+std::vector<VmId> FirstFit::getIdleVms()
+{
+    std::vector<VmId> idleVms;
+    for (const auto& vm : vms_) {
+        if (vm.totalCapacity == vm.idleCapacity) {
+            idleVms.push_back(vm.id);
+        }
+    }
+    return idleVms;
 }
 
 NextFit::NextFit(std::vector<ActiveVm> vms)
@@ -25,6 +48,7 @@ std::optional<VmId> NextFit::allocate(const QueuedJobInfo& job)
     while (iter_ != vms_.end()) {
         if (job.requiredCapacity.fits(iter_->idleCapacity)) {
             iter_->idleCapacity -= job.requiredCapacity;
+            updatedVmIds_.insert(iter_->id);
             return iter_->id;
         }
     }
@@ -32,10 +56,33 @@ std::optional<VmId> NextFit::allocate(const QueuedJobInfo& job)
     while (iter_ != startIter) {
         if (job.requiredCapacity.fits(iter_->idleCapacity)) {
             iter_->idleCapacity -= job.requiredCapacity;
+            updatedVmIds_.insert(iter_->id);
             return iter_->id;
         }
     }
     return std::nullopt;
+}
+
+VmIdToCapacity NextFit::getVmsWithUpdatedCapacities()
+{
+    VmIdToCapacity updatedVmsCapacities;
+    for (const auto& vm : vms_) {
+        if (updatedVmIds_.contains(vm.id)) {
+            updatedVmsCapacities.emplace(vm.id, vm.idleCapacity);
+        }
+    }
+    return updatedVmsCapacities;
+}
+
+std::vector<VmId> NextFit::getIdleVms()
+{
+    std::vector<VmId> idleVms;
+    for (const auto& vm : vms_) {
+        if (vm.totalCapacity == vm.idleCapacity) {
+            idleVms.push_back(vm.id);
+        }
+    }
+    return idleVms;
 }
 
 WorstFit::WorstFit(std::vector<ActiveVm> vms)
@@ -59,6 +106,7 @@ std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
                 if (activeVm.idleCapacity >= nextIt->idleCapacity) {
                     auto insertedIt =
                         vms_.insert_after(prevIt, std::move(activeVm));
+                    updatedVmIds_.insert(insertedIt->id);
                     return insertedIt->id;
                 }
                 ++prevIt;
@@ -69,6 +117,29 @@ std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
     }
     return std::nullopt;
 }
+
+VmIdToCapacity WorstFit::getVmsWithUpdatedCapacities()
+{
+    VmIdToCapacity updatedVmsCapacities;
+    for (const auto& vm : vms_) {
+        if (updatedVmIds_.contains(vm.id)) {
+            updatedVmsCapacities.emplace(vm.id, vm.idleCapacity);
+        }
+    }
+    return updatedVmsCapacities;
+}
+
+std::vector<VmId> WorstFit::getIdleVms()
+{
+    std::vector<VmId> idleVms;
+    for (const auto& vm : vms_) {
+        if (vm.totalCapacity == vm.idleCapacity) {
+            idleVms.push_back(vm.id);
+        }
+    }
+    return idleVms;
+}
+
 
 BestFit::BestFit(std::vector<ActiveVm> vms)
 {
@@ -89,14 +160,38 @@ std::optional<VmId> BestFit::allocate(const QueuedJobInfo& job)
             for (auto curIt = vms_.begin(); curIt != lastIt; ++curIt) {
                 if (curIt->idleCapacity >= activeVm.idleCapacity) {
                     auto insertedIt = vms_.insert(curIt, std::move(activeVm));
+                    updatedVmIds_.insert(insertedIt->id);
                     return insertedIt->id;
                 }
             }
             auto insertedIt = vms_.insert(lastIt, std::move(activeVm));
+            updatedVmIds_.insert(insertedIt->id);
             return insertedIt->id;
         }
     }
     return std::nullopt;
+}
+
+VmIdToCapacity BestFit::getVmsWithUpdatedCapacities()
+{
+    VmIdToCapacity updatedVmsCapacities;
+    for (const auto& vm : vms_) {
+        if (updatedVmIds_.contains(vm.id)) {
+            updatedVmsCapacities.emplace(vm.id, vm.idleCapacity);
+        }
+    }
+    return updatedVmsCapacities;
+}
+
+std::vector<VmId> BestFit::getIdleVms()
+{
+    std::vector<VmId> idleVms;
+    for (const auto& vm : vms_) {
+        if (vm.totalCapacity == vm.idleCapacity) {
+            idleVms.push_back(vm.id);
+        }
+    }
+    return idleVms;
 }
 
 } // namespace vm_scheduler
