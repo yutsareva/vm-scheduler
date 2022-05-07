@@ -88,7 +88,7 @@ std::vector<VmId> NextFit::getIdleVms()
 WorstFit::WorstFit(std::vector<ActiveVm> vms)
 {
     std::sort(
-        vms.rbegin(), vms.rend(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
+        vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
             return rhs.idleCapacity < lhs.idleCapacity;
         });
     vms_ = {vms.begin(), vms.end()}; // TODO: move
@@ -113,6 +113,10 @@ std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
                 ++prevIt;
                 ++nextIt;
             }
+            auto insertedIt =
+                vms_.insert_after(prevIt, std::move(activeVm));
+            updatedVmIds_.insert(insertedIt->id);
+            return insertedIt->id;
         }
         prevIt = it;
     }
