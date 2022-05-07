@@ -6,24 +6,24 @@ std::vector<SlotCapacity> getPossibleSlots()
 {
     return {
         {
-            .cpu = CpuCores(1),
-            .ram = MegaBytes(512),
+            .cpu = 1_cores,
+            .ram = 512_MB,
         },
         {
-            .cpu = CpuCores(2),
-            .ram = MegaBytes(1024),
+            .cpu = 2_cores,
+            .ram = 1024_MB,
         },
         {
-            .cpu = CpuCores(4),
-            .ram = MegaBytes(2048),
+            .cpu = 4_cores,
+            .ram = 2048_MB,
         },
         {
-            .cpu = CpuCores(8),
-            .ram = MegaBytes(4096),
+            .cpu = 8_cores,
+            .ram = 4096_MB,
         },
         {
-            .cpu = CpuCores(16),
-            .ram = MegaBytes(8192),
+            .cpu = 16_cores,
+            .ram = 8192_MB,
         },
     };
 }
