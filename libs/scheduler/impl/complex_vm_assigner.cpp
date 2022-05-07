@@ -3,14 +3,14 @@
 namespace vm_scheduler {
 
 ComplexVmAssigner::ComplexVmAssigner(
-        const ComplexVmAssignerConfig& config,
-        State state,
-        std::vector<SlotCapacity> possibleSlots)
+    const ComplexVmAssignerConfig& config,
+    State state,
+    const std::vector<SlotCapacity>& possibleSlots)
     : orderedJobs_(
           createOrderedJobs(config.jobOrdering, std::move(state.queuedJobs)))
     , jobAllocator_(
           createJobAllocator(config.allocationStrategy, std::move(state.vms)))
-    , vmSlotSelector_(std::move(possibleSlots))
+    , vmSlotSelector_(possibleSlots)
 { }
 
 StateChange ComplexVmAssigner::assign() noexcept
@@ -18,8 +18,7 @@ StateChange ComplexVmAssigner::assign() noexcept
     JobToVm jobToExistingVms;
     std::vector<QueuedJobInfo> unallocatedJobs;
     for (auto it = orderedJobs_->begin(); it != orderedJobs_->end(); ++it) {
-        const auto maybeAssignedVmId =
-            jobAllocator_->allocate(*it);
+        const auto maybeAssignedVmId = jobAllocator_->allocate(*it);
         if (maybeAssignedVmId) {
             jobToExistingVms[it->id] = *maybeAssignedVmId;
         } else {
@@ -27,7 +26,8 @@ StateChange ComplexVmAssigner::assign() noexcept
         }
     }
 
-    auto [jobToVm, desiredSlotMap] = vmSlotSelector_.select(std::move(unallocatedJobs));
+    auto [jobToVm, desiredSlotMap] =
+        vmSlotSelector_.select(std::move(unallocatedJobs));
     jobToVm.merge(jobToExistingVms);
 
     return {
