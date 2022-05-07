@@ -1,8 +1,10 @@
 #include "libs/scheduler/impl/simple_vm_assigner.h"
+#include "libs/scheduler/tests/test_utils.h"
 
 #include <gtest/gtest.h>
 
 using namespace vm_scheduler;
+namespace t = vm_scheduler::testing;
 
 TEST(SimpleVmAssigner, assign)
 {
@@ -96,6 +98,7 @@ TEST(SimpleVmAssigner, assign)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
 
 TEST(SimpleVmAssigner, emptyJobs)
@@ -156,6 +159,7 @@ TEST(SimpleVmAssigner, emptyJobs)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
 
 TEST(SimpleVmAssigner, emptyVms)
@@ -208,4 +212,5 @@ TEST(SimpleVmAssigner, emptyVms)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }

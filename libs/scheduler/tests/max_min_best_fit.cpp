@@ -96,6 +96,7 @@ TEST(MaxMinBestFitVmAssigner, assign)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
 
 TEST(MaxMinBestFitVmAssigner, emptyJobs)
@@ -162,6 +163,7 @@ TEST(MaxMinBestFitVmAssigner, emptyJobs)
         };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
 
 TEST(MaxMinBestFitVmAssigner, emptyVms)
@@ -220,6 +222,7 @@ TEST(MaxMinBestFitVmAssigner, emptyVms)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
 
 TEST(MaxMinBestFitVmAssigner, assignTest2)
@@ -356,4 +359,5 @@ TEST(MaxMinBestFitVmAssigner, assignTest2)
     };
 
     EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
 }
