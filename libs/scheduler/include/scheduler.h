@@ -9,7 +9,8 @@ namespace vm_scheduler {
 
 class Scheduler {
 public:
-    Scheduler(BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots);
+    Scheduler(
+        BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots);
     void schedule() noexcept;
 
 private:

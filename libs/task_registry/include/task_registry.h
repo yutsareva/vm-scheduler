@@ -26,8 +26,8 @@ private:
     BackendId id_;
 
     std::unique_ptr<TaskStorage> taskStorage_;
-    Allocator allocator_;
     Scheduler scheduler_;
+    Allocator allocator_;
     FailureDetector failureDetector_;
     GrpcServer grpcServer_;
 

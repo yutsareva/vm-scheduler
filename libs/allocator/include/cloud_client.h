@@ -16,6 +16,7 @@ public:
         const VmId vmId, const SlotCapacity& slot) noexcept = 0;
     virtual Result<void> terminate(const CloudVmId& vmId) noexcept = 0;
     virtual Result<AllocatedVmInfos> getAllAllocatedVms() noexcept = 0;
+    virtual std::vector<SlotCapacity> getPossibleSlots() noexcept = 0;
 };
 
 } // namespace vm_scheduler

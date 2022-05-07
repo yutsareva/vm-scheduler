@@ -19,6 +19,8 @@ public:
         Result<void>, terminate, (const CloudVmId& vmInfo), (noexcept, override));
     MOCK_METHOD(
         Result<AllocatedVmInfos>, getAllAllocatedVms, (), (noexcept, override));
+    MOCK_METHOD(
+        std::vector<SlotCapacity>, getPossibleSlots, (), (noexcept, override));
 };
 
 } // namespace vm_scheduler::testing

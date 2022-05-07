@@ -5,6 +5,7 @@
 #include "libs/aws/allocator/impl/select_instance_type.h"
 #include "libs/aws/allocator/include/config.h"
 
+#include <libs/common/include/base64.h>
 #include <libs/common/include/env.h>
 
 #include <libs/common/include/log.h>
@@ -124,20 +125,26 @@ std::string getUserData(
     const AgentEcrCredentials& creds,
     const VmId vmId)
 {
-    return maps::base64Encode(toString(
+    return base64Encode(toString(
         "#!/bin/bash\n",
         "set -e -x\n",
-        std::format("aws configure set aws_access_key_id {}\n", creds.accessKeyId),
-        std::format("aws configure set aws_secret_access_key {}\n", creds.secretKey),
+        "aws configure set aws_access_key_id ",
+        creds.accessKeyId,
+        "\n",
+        "aws configure set aws_secret_access_key {",
+        creds.secretKey,
+        "\n",
         "aws configure set default.region us-east-2\n",
         "aws configure set default.output json\n",
         "sudo aws ecr get-login-password --region us-east-2 | ",
         "sudo docker login --username AWS --password-stdin 545868914688.dkr.ecr.us-east-2.amazonaws.com\n",
-        std::format(
-            "sudo docker run -e VMS_ADDRESS={} -e VM_ID={}", vmsAddress, vmId),
-        std::format(
-            " --network host 545868914688.dkr.ecr.us-east-2.amazonaws.com/vm-agent:{}\n",
-            agentDockerImageVersion)));
+        "sudo docker run -e VMS_ADDRESS=",
+        vmsAddress,
+        "-e VM_ID=",
+        vmId,
+        " --network host 545868914688.dkr.ecr.us-east-2.amazonaws.com/vm-agent:",
+        agentDockerImageVersion,
+        "\n"));
 }
 
 Aws::EC2::Model::RunInstancesRequest createRunRequest(
@@ -257,6 +264,15 @@ Result<void> AwsCloudClient::terminate(const CloudVmId& cloudVmId) noexcept
 Result<AllocatedVmInfos> AwsCloudClient::getAllAllocatedVms() noexcept
 {
     return describeInstances(*client_, vmConfig_.vmTags);
+}
+
+std::vector<SlotCapacity> AwsCloudClient::getPossibleSlots() noexcept
+{
+    std::vector<SlotCapacity> possibleSlots;
+    for (const auto& vmType: vmConfig_.vmTypes) {
+        possibleSlots.push_back(vmType.capacity);
+    }
+    return possibleSlots;
 }
 
 } // namespace vm_scheduler

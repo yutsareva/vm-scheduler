@@ -19,6 +19,7 @@ public:
         const VmId vmId, const SlotCapacity& slot) noexcept override;
     Result<void> terminate(const CloudVmId& cloudVmId) noexcept override;
     Result<AllocatedVmInfos> getAllAllocatedVms() noexcept override;
+    std::vector<SlotCapacity> getPossibleSlots() noexcept override;
 
 private:
     Result<AwsVmInfo> allocate(
