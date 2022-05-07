@@ -1,5 +1,3 @@
-#pragma once
-
 #include "libs/common/include/base64.h"
 
 namespace vm_scheduler {

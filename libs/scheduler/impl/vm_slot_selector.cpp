@@ -58,7 +58,7 @@ std::pair<JobToVm, DesiredSlotMap> VmSlotSelector::select(
                desiredSlots.rbegin()->first.total.cpu.count() <
                    possibleSlots_.back().cpu.count()) {
             (desiredSlots.rbegin() + 1)->first.idle +=
-                (desiredSlots.rbegin() + 1)->first.total;
+                (desiredSlots.rbegin())->first.idle;
             (desiredSlots.rbegin() + 1)->first.total *= 2;
             (desiredSlots.rbegin() + 1)
                 ->second.insert(
