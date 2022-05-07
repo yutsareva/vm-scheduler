@@ -2,7 +2,6 @@
 
 #include <libs/state/include/state.h>
 
-#include <cassert>
 #include <vector>
 
 namespace vm_scheduler {
@@ -14,6 +13,8 @@ public:
 
 private:
     SlotCapacity getMinFitSlot(const SlotCapacity& slot);
+
+private:
     const std::vector<SlotCapacity>& possibleSlots_;
 };
 

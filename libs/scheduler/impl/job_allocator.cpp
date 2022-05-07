@@ -194,4 +194,19 @@ std::vector<VmId> BestFit::getIdleVms()
     return idleVms;
 }
 
+std::unique_ptr<JobAllocator> createJobAllocator(
+    const AllocationStrategy type, std::vector<ActiveVm> vms)
+{
+    switch (type) {
+        case AllocationStrategy::FirstFit:
+            return std::make_unique<FirstFit>(std::move(vms));
+        case AllocationStrategy::NextFit:
+            return std::make_unique<NextFit>(std::move(vms));
+        case AllocationStrategy::WorstFit:
+            return std::make_unique<WorstFit>(std::move(vms));
+        case AllocationStrategy::BestFit:
+            return std::make_unique<BestFit>(std::move(vms));
+    }
+}
+
 } // namespace vm_scheduler

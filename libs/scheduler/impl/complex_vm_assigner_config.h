@@ -19,6 +19,8 @@ enum class AllocationStrategy {
     BestFit /*"bestfit"*/,
 };
 
+AllocationStrategy allocationStrategyFromString(const std::string& s);
+
 struct ComplexVmAssignerConfig {
     JobOrdering jobOrdering;
     AllocationStrategy allocationStrategy;

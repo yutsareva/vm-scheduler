@@ -9,10 +9,32 @@ using namespace vm_scheduler;
 namespace t = vm_scheduler::testing;
 using namespace ::testing;
 
+namespace {
+
+std::vector<SlotCapacity> getPossibleSlots()
+{
+    return {
+        {
+            .cpu = CpuCores(1),
+            .ram = MegaBytes(512),
+        },
+        {
+            .cpu = CpuCores(2),
+            .ram = MegaBytes(1024),
+        },
+        {
+            .cpu = CpuCores(4),
+            .ram = MegaBytes(2048),
+        },
+    };
+}
+
+} // anonymous namespace
+
 TEST(Scheduler, schedule)
 {
     t::TaskStorageMock taskStorageMock;
-    Scheduler scheduler("backendId", &taskStorageMock);
+    Scheduler scheduler("backendId", &taskStorageMock, getPossibleSlots());
 
     EXPECT_CALL(taskStorageMock, addTask).Times(0);
     EXPECT_CALL(taskStorageMock, startScheduling(_, _))
@@ -28,7 +50,7 @@ TEST(Scheduler, schedule)
 TEST(Scheduler, schedulingCancelled)
 {
     t::TaskStorageMock taskStorageMock;
-    Scheduler scheduler("backendId", &taskStorageMock);
+    Scheduler scheduler("backendId", &taskStorageMock, getPossibleSlots());
 
     EXPECT_CALL(taskStorageMock, startScheduling(_, _))
         .WillOnce(Return(Result<PlanId>::Failure<RuntimeException>(

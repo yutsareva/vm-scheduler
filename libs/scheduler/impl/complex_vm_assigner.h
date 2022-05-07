@@ -15,7 +15,7 @@ public:
     ComplexVmAssigner(
         const ComplexVmAssignerConfig& config,
         State state,
-        std::vector<SlotCapacity> possibleSlots);
+        const std::vector<SlotCapacity>& possibleSlots);
     StateChange assign() noexcept override;
 
 private:

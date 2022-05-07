@@ -1,9 +1,6 @@
-#pragma once
-
-#include <libs/state/include/state.h>
+#include <libs/scheduler/impl/vm_slot_selector.h>
 
 #include <cassert>
-#include <vector>
 
 namespace vm_scheduler {
 

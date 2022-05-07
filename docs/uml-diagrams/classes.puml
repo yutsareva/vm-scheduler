@@ -13,28 +13,31 @@ CloudClient <|.. AwsCloudClient
 TaskStorage <.. Allocator
 
 class Scheduler
-class VmAssigner
-interface JobOrderer
-class FifoJobOrderer
-class MinminJobOrderer
-class MaxminJobOrderer
-interface AllocatorStratagy
+interface VmAssigner
+interface OrderedJobs
+class Fifo
+class MinMin
+class MaxMin
+interface JobAllocator
 class BestFit
 class WorstFit
 class NextFit
 class FirstFit
 
 Scheduler *-- VmAssigner
-VmAssigner *-- JobOrderer
-JobOrderer <|.. FifoJobOrderer
-JobOrderer <|.. MinminJobOrderer
-JobOrderer <|.. MaxminJobOrderer
-VmAssigner *-- AllocatorStratagy
-AllocatorStratagy <|.. BestFit
-AllocatorStratagy <|.. WorstFit
-AllocatorStratagy <|.. NextFit
-AllocatorStratagy <|.. FirstFit
-VmAssigner *-- SlotSelector
+TaskStorage <.. Scheduler
+VmAssigner <|.. SimpleVmAssigner
+VmAssigner <|.. ComplexVmAssigner
+ComplexVmAssigner *-- OrderedJobs
+OrderedJobs <|.. Fifo
+OrderedJobs <|.. MinMin
+OrderedJobs <|.. MaxMin
+ComplexVmAssigner *-- JobAllocator
+JobAllocator <|.. BestFit
+JobAllocator <|.. WorstFit
+JobAllocator <|.. NextFit
+JobAllocator <|.. FirstFit
+ComplexVmAssigner *-- VmSlotSelector
 
 class FailureDetector
 Allocator <.. FailureDetector
@@ -49,8 +52,8 @@ GrpcServer *-- PublicApiSchedulerService
 
 class TaskRegistry
 TaskRegistry o-- Allocator
+TaskRegistry o-- GrpcServer
 TaskRegistry o-- Scheduler
 TaskRegistry o-- FailureDetector
-TaskRegistry o-- GrpcServer
 
 @enduml
