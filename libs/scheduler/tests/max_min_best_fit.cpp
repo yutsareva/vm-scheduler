@@ -509,7 +509,7 @@ TEST(MaxMinBestFitVmAssigner, assignTest3)
                 6,
                 {
                     .cpu = 0_cores,
-                    .ram = 1_MB,
+                    .ram = 0_MB,
                 }
             },
         },
