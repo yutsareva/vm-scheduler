@@ -1,4 +1,6 @@
 #include "libs/task_registry/include/task_registry.h"
+#include "libs/zookeeper/include/dist_lock.h"
+
 
 #include <libs/common/include/log.h>
 
@@ -31,8 +33,13 @@ TaskRegistry::TaskRegistry(
 
     if (config.mode == SchedulerMode::FullScheduler ||
         config.mode == SchedulerMode::CoreScheduler) {
+        std::optional<size_t> lockNumber = std::nullopt;
+        if (config.useZkDistLock) {
+            DistLock lock;
+            lockNumber = lock.lock();
+        }
         schedulingThread_ = std::make_unique<BackgroundThread>(
-            [this] { scheduler_.schedule(); }, config.scheduleInterval);
+            [this] { scheduler_.schedule(lockNumber); }, config.scheduleInterval);
     }
 
     INFO() << "Backend with id = " << id_ << " started";

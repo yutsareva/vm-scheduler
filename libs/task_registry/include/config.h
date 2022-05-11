@@ -18,6 +18,7 @@ struct Config {
     std::chrono::seconds scheduleInterval;
     std::chrono::seconds detectFailuresInterval;
     SchedulerMode mode;
+    bool useZkDistLock;
 };
 
 Config createConfig();

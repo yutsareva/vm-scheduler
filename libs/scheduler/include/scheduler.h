@@ -11,7 +11,7 @@ class Scheduler {
 public:
     Scheduler(
         BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots);
-    void schedule() noexcept;
+    void schedule(const std::optional<size_t>& lockNumber) noexcept;
 
 private:
     BackendId id_;

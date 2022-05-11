@@ -15,10 +15,10 @@ Scheduler::Scheduler(
     , possibleSlots_(std::move(possibleSlots))
 { }
 
-void Scheduler::schedule() noexcept
+void Scheduler::schedule(const std::optional<size_t>& lockNumber) noexcept
 {
     const auto planIdResult =
-        taskStorage_->startScheduling(id_, config_.schedulingInterval);
+        taskStorage_->startScheduling(id_, config_.schedulingInterval, lockNumber);
     if (planIdResult.IsFailure()) {
         ERROR() << "Failed to start new scheduling iteration: "
                 << what(planIdResult.ErrorRefOrThrow());
