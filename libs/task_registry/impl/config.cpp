@@ -35,7 +35,7 @@ Config createConfig()
             "VMS_DETECT_FAILURES_INTERVAL_S", DEFAULT_DETECT_FAILURES_INTERVAL_S)},
         .mode = schedulerModeFromString(
             getFromEnvOrDefault("VMS_MODE", DEFAULT_SCHEDULER_MODE)),
-        .useZkDistLock = bool{getFromEnvOrDefault<size_t>(
+        .useZkDistLock = bool{getFromEnvOrDefault(
             "VMS_USE_ZK_DIST_LOCK", DEFAULT_USE_ZK_DIST_LOCK)},
     };
 }

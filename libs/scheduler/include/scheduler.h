@@ -5,6 +5,8 @@
 
 #include <libs/task_storage/include/task_storage.h>
 
+#include <memory>
+
 namespace vm_scheduler {
 
 class Scheduler {
@@ -13,7 +15,7 @@ public:
         BackendId id,
         TaskStorage* taskStorage,
         std::vector<SlotCapacity> possibleSlots,
-        shared_ptr<DistributedLock> distLock);
+        std::shared_ptr<DistributedLock> distLock);
     void schedule() noexcept;
 
 private:
@@ -21,7 +23,7 @@ private:
     TaskStorage* taskStorage_;
     SchedulerConfig config_;
     std::vector<SlotCapacity> possibleSlots_;
-    shared_ptr<DistributedLock> distLock_;
+    std::shared_ptr<DistributedLock> distLock_;
 };
 
 } // namespace vm_scheduler

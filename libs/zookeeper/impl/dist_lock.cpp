@@ -5,7 +5,9 @@
 
 namespace vm_scheduler {
 
-DistributedLock::DistributedLock(ZkConfig config) : config_(std::move(config))
+DistributedLock::DistributedLock(ZkConfig config)
+    : config_(std::move(config))
+    , zkClient_(zk::client::connect(config_.address).get())
 {
     auto lockFuture = std::async(
         std::launch::async, &DistributedLock::lock, this->shared_from_this());

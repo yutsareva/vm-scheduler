@@ -6,6 +6,7 @@
 namespace vm_scheduler {
 
 struct ZkConfig {
+    std::string address;
     std::string lockPath;
     std::vector<char> lockName = {};
 };

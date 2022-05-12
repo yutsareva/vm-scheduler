@@ -12,7 +12,7 @@ Scheduler::Scheduler(
     BackendId id,
     TaskStorage* taskStorage,
     std::vector<SlotCapacity> possibleSlots,
-    shared_ptr<DistributedLock> distLock)
+    std::shared_ptr<DistributedLock> distLock)
     : id_(std::move(id))
     , taskStorage_(taskStorage)
     , config_(createSchedulerConfig())
@@ -39,8 +39,8 @@ Scheduler::Scheduler(
 void Scheduler::schedule() noexcept
 {
     std::optional<size_t> lockNumber = std::nullopt;
-    if (distLock != nullptr) {
-        lockNumber = distLock->lockNomber();
+    if (distLock_ != nullptr) {
+        lockNumber = distLock_->lockNumber();
         if (!lockNumber) {
             ERROR() << "Lock is not acquired.";
             return;
