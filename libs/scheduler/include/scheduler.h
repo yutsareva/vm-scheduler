@@ -1,16 +1,19 @@
 #pragma once
 
 #include "libs/scheduler/include/config.h"
+#include "libs/zookeeper/include/dist_lock.h"
 
 #include <libs/task_storage/include/task_storage.h>
-
 
 namespace vm_scheduler {
 
 class Scheduler {
 public:
     Scheduler(
-        BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots, shared_ptr<DistributedLock> distLock);
+        BackendId id,
+        TaskStorage* taskStorage,
+        std::vector<SlotCapacity> possibleSlots,
+        shared_ptr<DistributedLock> distLock);
     void schedule() noexcept;
 
 private:

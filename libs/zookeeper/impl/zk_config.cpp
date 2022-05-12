@@ -9,11 +9,12 @@ constexpr auto DEFAULT_ZK_LOCK_PATH = "vms-prod";
 
 ZkConfig createZkConfig()
 {
+    const auto lockNameStr = getFromEnvOrDefault(
+        "VMS_ZK_LOCK_NAME", DEFAULT_ZK_LOCK_NAME);
     return ZkConfig{
-        .lockName = getFromEnvOrDefault(
-            "VMS_ZK_LOCK_NAME", DEFAULT_ZK_LOCK_NAME),
         .lockPath = getFromEnvOrDefault(
             "VMS_ZK_LOCK_PATH", DEFAULT_ZK_LOCK_PATH),
+        .lockName = {lockNameStr.begin(), lockNameStr.end()},
     };
 }
 
