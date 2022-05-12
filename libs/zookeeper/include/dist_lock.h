@@ -1,15 +1,12 @@
 #pragma once
 
+#include "libs/zookeeper/include/zk_config.h"
+
 #include <zk/client.hpp>
 
 #include <memory>
 
 namespace vm_scheduler {
-
-struct ZkConfig {
-    std::string lockPath;
-    std::vector<char> lockName = {};
-};
 
 class DistributedLock : std::enable_shared_from_this<DistributedLock> {
 public:
@@ -33,8 +30,6 @@ private:
     std::string createdNodeName_;
     std::optional<size_t> lockNumber_;
 };
-
-ZkConfig createZkConfig();
 
 std::shared_ptr<DistributedLock> createDistLock(bool create);
 
