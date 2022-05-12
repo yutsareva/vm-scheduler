@@ -364,14 +364,14 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(
     }
 
     std::stringstream tmpTable;
-    for (const auto& [jobId, vmOrSlotId] : vmAssignments) {
-        //        if (i != 0) {
-        //            tmpTable << ", ";
-        //        }
-        if (std::holds_alternative<DesiredSlotId>(vmOrSlotId)) {
-            tmpTable << "(" << jobId << ", " << slotsToVms[std::get<DesiredSlotId>(vmOrSlotId)] << ")";
+    for (auto it = vmAssignments.begin(); it != vmAssignments.end(); ++it) {
+        if (it != vmAssignments.begin()) {
+            tmpTable << ", ";
+        }
+        if (std::holds_alternative<DesiredSlotId>(it->second)) {
+            tmpTable << "(" << it->first << ", " << slotsToVms[std::get<DesiredSlotId>(it->second)] << ")";
         } else {
-            tmpTable << "(" << jobId << ", " << std::get<VmId>(vmOrSlotId) << ")";
+            tmpTable << "(" << it->first << ", " << std::get<VmId>(it->second) << ")";
         }
     }
 

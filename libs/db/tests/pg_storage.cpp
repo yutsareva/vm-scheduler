@@ -73,9 +73,15 @@ TEST(CommitPlanChange, fulScenario)
     EXPECT_TRUE(planIdResult.IsSuccess());
 
     const auto stateChange = StateChange{
-        .vmAssignments = {
+        .jobToVm = {
             {
                 1,
+                DesiredSlotId(1),
+            },
+        },
+        .desiredSlotMap = {
+            {
+                DesiredSlotId(1),
                 DesiredSlot{
                     .total = SlotCapacity{
                         .cpu = 3_cores,
@@ -88,8 +94,8 @@ TEST(CommitPlanChange, fulScenario)
                 },
             },
         },
-        .vmsToTerminate = { },
         .updatedIdleCapacities = { },
+        .vmsToTerminate = { },
     };
 
     auto commitResult = pgTaskStorage.commitPlanChange(stateChange, planIdResult.ValueRefOrThrow());

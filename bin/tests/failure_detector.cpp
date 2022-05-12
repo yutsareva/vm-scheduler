@@ -60,6 +60,13 @@ TEST(fail_tasks, non_working_allocator)
             "Unexpected exception while requesting a VM")));
     EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
         .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
         std::make_unique<PgTaskStorage>(pg::createPool()),
@@ -91,6 +98,13 @@ TEST(fail_tasks, non_working_agent)
         .WillRepeatedly(Return(Result<void>::Success()));
     EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
         .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
@@ -102,7 +116,6 @@ TEST(fail_tasks, non_working_agent)
         t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
     checkAllJobsFailed(taskResult);
 }
-
 
 TEST(TerminateUntracked, simple)
 {
@@ -122,6 +135,13 @@ TEST(TerminateUntracked, simple)
         .WillOnce(Return(Result{AllocatedVmInfos{allocatedVmInfo}}));
     EXPECT_CALL(*cloudClientMock, terminate(_))
         .WillOnce(Return(Result<void>::Success()));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,

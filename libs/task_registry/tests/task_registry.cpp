@@ -42,6 +42,17 @@ TEST(task_registry, simple)
         .WillOnce(Return(Result{AllocatedVmInfos{}}));
     EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
         .WillOnce(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+            SlotCapacity{
+                .cpu = 2_cores,
+                .ram = 2048_MB,
+            }
+        }));
 
     TaskRegistry taskRegistry(
         config, std::move(taskStorageMock), std::move(cloudClientMock));

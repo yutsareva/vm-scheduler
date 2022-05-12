@@ -13,7 +13,8 @@ using namespace ::testing;
 TEST(Scheduler, schedule)
 {
     t::TaskStorageMock taskStorageMock;
-    Scheduler scheduler("backendId", &taskStorageMock, t::getPossibleSlots());
+    const auto possibleSlots = t::getPossibleSlots();
+    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots);
 
     EXPECT_CALL(taskStorageMock, addTask).Times(0);
     EXPECT_CALL(taskStorageMock, startScheduling(_, _))
@@ -29,7 +30,8 @@ TEST(Scheduler, schedule)
 TEST(Scheduler, schedulingCancelled)
 {
     t::TaskStorageMock taskStorageMock;
-    Scheduler scheduler("backendId", &taskStorageMock, t::getPossibleSlots());
+    const auto possibleSlots = t::getPossibleSlots();
+    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots);
 
     EXPECT_CALL(taskStorageMock, startScheduling(_, _))
         .WillOnce(Return(Result<PlanId>::Failure<RuntimeException>(

@@ -10,10 +10,7 @@ VmSlotSelector::VmSlotSelector(const std::vector<SlotCapacity>& possibleSlots)
     assert(!possibleSlots.empty());
     assert(std::is_sorted(possibleSlots.begin(), possibleSlots.end()));
     for (size_t i = 0; i + 1 < possibleSlots.size(); ++i) {
-        assert(
-            2 * possibleSlots[i].cpu.count() == possibleSlots[i + 1].cpu.count());
-        assert(
-            2 * possibleSlots[i].ram.count() == possibleSlots[i + 1].ram.count());
+        assert(possibleSlots[i] * 2 == possibleSlots[i + 1]);
     }
 }
 
