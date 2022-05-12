@@ -95,6 +95,8 @@ void DistributedLock::checkLockAcquired()
                             std::move(watchExistsCurrentZNode)]() mutable {
                 self->retryCheckLockAcquired(std::move(watchExistsCurrentZNode));
             });
+            std::unique_lock lock(mutex_);
+            lockNumber_ = std::atoi(createdNodeName_.c_str());
             return;
         }
 
