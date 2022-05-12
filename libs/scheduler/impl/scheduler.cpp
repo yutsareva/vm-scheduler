@@ -8,15 +8,27 @@
 namespace vm_scheduler {
 
 Scheduler::Scheduler(
-    BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots)
+    BackendId id,
+    TaskStorage* taskStorage,
+    std::vector<SlotCapacity> possibleSlots,
+    shared_ptr<DistributedLock> distLock)
     : id_(std::move(id))
     , taskStorage_(taskStorage)
     , config_(createSchedulerConfig())
     , possibleSlots_(std::move(possibleSlots))
+    , distLock_(std::move(distLock))
 { }
 
-void Scheduler::schedule(const std::optional<size_t>& lockNumber) noexcept
+void Scheduler::schedule() noexcept
 {
+    std::optional<size_t> lockNumber = std::nullopt;
+    if (distLock != nullptr) {
+        lockNumber = distLock->lockNomber();
+        if (!lockNumber) {
+            ERROR() << "Lock is not acquired.";
+            return;
+        }
+    }
     const auto planIdResult =
         taskStorage_->startScheduling(id_, config_.schedulingInterval, lockNumber);
     if (planIdResult.IsFailure()) {

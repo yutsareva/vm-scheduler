@@ -10,14 +10,15 @@ namespace vm_scheduler {
 class Scheduler {
 public:
     Scheduler(
-        BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots);
-    void schedule(const std::optional<size_t>& lockNumber) noexcept;
+        BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots, shared_ptr<DistributedLock> distLock);
+    void schedule() noexcept;
 
 private:
     BackendId id_;
     TaskStorage* taskStorage_;
     SchedulerConfig config_;
     std::vector<SlotCapacity> possibleSlots_;
+    shared_ptr<DistributedLock> distLock_;
 };
 
 } // namespace vm_scheduler

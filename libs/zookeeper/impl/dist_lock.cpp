@@ -1,19 +1,62 @@
 #include "libs/zookeeper/include/dist_lock.h"
+#include "libs/common/include/log.h"
 
 #include <cassert>
 
 namespace vm_scheduler {
 
-DistributedLock::DistributedLock(ZkConfig config)
-    : config_(std::move(config)){};
-DistributedLock::~DistributedLock()
+DistributedLock::DistributedLock(ZkConfig config) : config_(std::move(config))
+{
+    auto lockFuture = std::async(
+        std::launch::async, &DistributedLock::lock, this->shared_from_this());
+}
+
+DistributedLock::~DistributedLock() { }
+
+void DistributedLock::stop()
 {
     isStopped_.store(true);
+    zkClient_.close();
     zkClient_.erase(config_.lockPath + "/" + createdNodeName_).get();
-};
+}
 
-size_t DistributedLock::lock()
+std::optional<size_t> DistributedLock::lockNumber()
 {
+    std::unique_lock lock(mutex_);
+    return lockNumber_;
+}
+
+void DistributedLock::retryLock(std::future<zk::watch_exists_result>&& f)
+{
+    try {
+        f.get();
+    } catch (const std::exception& e) {
+        ERROR() << "Error while waiting on exist_watch: " << e.what();
+    }
+    lock();
+}
+
+void DistributedLock::retryCheckLockAcquired(
+    std::future<zk::watch_exists_result>&& f)
+{
+    try {
+        f.get();
+    } catch (const std::exception& e) {
+        ERROR() << "Error while waiting on exist_watch: " << e.what();
+    }
+    checkLockAcquired();
+}
+
+void DistributedLock::lock()
+{
+    if (isStopped_) {
+        return;
+    }
+    {
+        std::unique_lock lock(mutex_);
+        lockNumber_ = std::nullopt;
+    }
+
     createdNodeName_ =
         zkClient_
             .create(
@@ -22,12 +65,9 @@ size_t DistributedLock::lock()
                 zk::create_mode::ephemeral | zk::create_mode::sequential)
             .get()
             .name();
-
-    blockUntilAcquired();
-    return createdNodeName_;
 }
 
-void DistributedLock::blockUntilAcquired()
+void DistributedLock::checkLockAcquired()
 {
     while (!isStopped_.load()) {
         const auto children =
@@ -48,18 +88,39 @@ void DistributedLock::blockUntilAcquired()
             std::pair<size_t, std::string>{
                 std::atoi(createdNodeName_.c_str()), createdNodeName_});
         if (it == childrenWithSeq.begin()) {
+            auto watchExistsCurrentZNode =
+                zkClient_.watch_exists(config_.lockPath + "/" + it->second);
+            std::async([self = shared_from_this(),
+                        watchExistsCurrentZNode =
+                            std::move(watchExistsCurrentZNode)]() mutable {
+                self->retryCheckLockAcquired(std::move(watchExistsCurrentZNode));
+            });
             return;
         }
 
         auto watchRemoval =
-            zkClient_.watch_exists(config_.lockPath + "/" + (it - 1)->second).get();
-        assert(watchRemoval.initial());
+            zkClient_.watch_exists(config_.lockPath + "/" + (it - 1)->second);
 
-        //        auto handleRemoval = [&createdNode](const std::future<zk::event>& event) {
-        //        };
-        //                future.next().then(createdNode);
-        watchRemoval.next().get();
+        std::async([self = shared_from_this(),
+                    watchRemoval = std::move(watchRemoval)]() mutable {
+            self->retryLock(std::move(watchRemoval));
+        });
     }
+}
+
+ZkConfig createZkConfig()
+{
+    return ZkConfig{
+        // TODO
+    };
+}
+
+std::shared_ptr<DistributedLock> createDistLock(bool create)
+{
+    if (!create) {
+        return nullptr;
+    }
+    return std::make_shared<DistributedLock>(createZkConfig());
 }
 
 } // namespace vm_scheduler

@@ -2,6 +2,8 @@
 
 #include <zk/client.hpp>
 
+#include <memory>
+
 namespace vm_scheduler {
 
 struct ZkConfig {
@@ -9,25 +11,31 @@ struct ZkConfig {
     std::vector<char> lockName = {};
 };
 
-class DistributedLock {
+class DistributedLock : std::enable_shared_from_this<DistributedLock> {
 public:
     DistributedLock(ZkConfig config);
     ~DistributedLock();
 
-    size_t lock();
+    void stop();
+    void lock();
+    std::optional<size_t> lockNumber();
+
 private:
-    void blockUntilAcquired();
-//    std::string createdNodeNameAsStr() {
-//        std::string s(createdNodeName_.begin(), createdNodeName_.end());
-//        return s;
-//    }
+    void retryLock(std::future<zk::watch_exists_result>&& f);
+    void retryCheckLockAcquired(std::future<zk::watch_exists_result>&& f);
+    void checkLockAcquired();
+
 private:
     zk::client zkClient_;
     ZkConfig config_;
-    //    std::mutex mutex_;
-    //    std::condition_variable isFirstChild_;
+    std::mutex mutex_;
     std::atomic_bool isStopped_{false};
     std::string createdNodeName_;
+    std::optional<size_t> lockNumber_;
 };
+
+ZkConfig createZkConfig();
+
+std::shared_ptr<DistributedLock> createDistLock(bool create);
 
 } // namespace vm_scheduler

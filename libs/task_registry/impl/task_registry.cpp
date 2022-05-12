@@ -1,7 +1,6 @@
 #include "libs/task_registry/include/task_registry.h"
 #include "libs/zookeeper/include/dist_lock.h"
 
-
 #include <libs/common/include/log.h>
 
 //#include <unistd.h>
@@ -15,6 +14,9 @@ TaskRegistry::TaskRegistry(
     std::unique_ptr<CloudClient>&& cloudClient)
     : id_("1234") // TODO: hostname
     , taskStorage_(std::move(taskStorage))
+    , distLock_(createDistLock(
+          config.useZkDistLock && (config.mode == SchedulerMode::FullScheduler ||
+                                   config.mode == SchedulerMode::CoreScheduler)))
     , scheduler_(id_, taskStorage_.get(), cloudClient->getPossibleSlots())
     , allocator_(taskStorage_.get(), std::move(cloudClient))
     , failureDetector_(taskStorage_.get(), &allocator_)
@@ -33,13 +35,8 @@ TaskRegistry::TaskRegistry(
 
     if (config.mode == SchedulerMode::FullScheduler ||
         config.mode == SchedulerMode::CoreScheduler) {
-        std::optional<size_t> lockNumber = std::nullopt;
-        if (config.useZkDistLock) {
-            DistLock lock;
-            lockNumber = lock.lock();
-        }
         schedulingThread_ = std::make_unique<BackgroundThread>(
-            [this] { scheduler_.schedule(lockNumber); }, config.scheduleInterval);
+            [this] { scheduler_.schedule(); }, config.scheduleInterval);
     }
 
     INFO() << "Backend with id = " << id_ << " started";
