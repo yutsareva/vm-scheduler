@@ -9,11 +9,15 @@
 namespace vm_scheduler {
 
 Scheduler::Scheduler(
-    BackendId id, TaskStorage* taskStorage, std::vector<SlotCapacity> possibleSlots)
+    BackendId id,
+    TaskStorage* taskStorage,
+    std::vector<SlotCapacity> possibleSlots,
+    shared_ptr<DistributedLock> distLock)
     : id_(std::move(id))
     , taskStorage_(taskStorage)
     , config_(createSchedulerConfig())
     , possibleSlots_(std::move(possibleSlots))
+    , distLock_(std::move(distLock))
 {
     if (possibleSlots_.empty()) {
         throw RuntimeException("Possible slots array is empty");
@@ -34,8 +38,16 @@ Scheduler::Scheduler(
 
 void Scheduler::schedule() noexcept
 {
+    std::optional<size_t> lockNumber = std::nullopt;
+    if (distLock != nullptr) {
+        lockNumber = distLock->lockNomber();
+        if (!lockNumber) {
+            ERROR() << "Lock is not acquired.";
+            return;
+        }
+    }
     const auto planIdResult =
-        taskStorage_->startScheduling(id_, config_.schedulingInterval);
+        taskStorage_->startScheduling(id_, config_.schedulingInterval, lockNumber);
     if (planIdResult.IsFailure()) {
         ERROR() << "Failed to start new scheduling iteration: "
                 << what(planIdResult.ErrorRefOrThrow());

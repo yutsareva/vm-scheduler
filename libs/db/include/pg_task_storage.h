@@ -19,7 +19,8 @@ public:
         const TaskParameters& taskParameters) noexcept override;
     Result<PlanId> startScheduling(
         const std::string& backendId,
-        const std::chrono::seconds& schedulingInterval) noexcept override;
+        const std::chrono::seconds& schedulingInterval,
+        const std::optional<size_t>& lockNumber) noexcept override;
     Result<State> getCurrentState() noexcept override;
     Result<void> commitPlanChange(
         const StateChange& state, const PlanId planId) noexcept override;

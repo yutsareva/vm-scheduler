@@ -21,7 +21,8 @@ public:
         Result<PlanId>,
         startScheduling,
         (const std::string& backendId,
-         const std::chrono::seconds& schedulingInterval),
+         const std::chrono::seconds& schedulingInterval,
+         const std::optional<size_t>& lockNumber),
         (noexcept, override));
     MOCK_METHOD(Result<State>, getCurrentState, (), (noexcept, override));
     MOCK_METHOD(

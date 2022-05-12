@@ -20,7 +20,8 @@ public:
         const TaskParameters& taskParameters) noexcept = 0;
     virtual Result<PlanId> startScheduling(
         const std::string& backendId,
-        const std::chrono::seconds& schedulingInterval) noexcept = 0;
+        const std::chrono::seconds& schedulingInterval,
+        const std::optional<size_t>& lockNumber) noexcept = 0;
     virtual Result<State> getCurrentState() noexcept = 0;
     virtual Result<void> commitPlanChange(
         const StateChange& state, const PlanId planId) noexcept = 0;

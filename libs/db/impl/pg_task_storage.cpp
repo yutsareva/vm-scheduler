@@ -106,7 +106,8 @@ Result<CreatedJobs> PgTaskStorage::addTask(const TaskParameters& taskParameters)
 
 Result<PlanId> PgTaskStorage::startScheduling(
     const std::string& backendId,
-    const std::chrono::seconds& schedulingInterval) noexcept
+    const std::chrono::seconds& schedulingInterval,
+    const std::optional<size_t>& lockNumber) noexcept
 {
     const bool noWait = true;
     auto txnResult = acquireLock_(noWait);

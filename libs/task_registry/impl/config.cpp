@@ -10,6 +10,7 @@ constexpr size_t DEFAULT_VMS_ALLOCATION_INTERVAL_S{60};
 constexpr size_t DEFAULT_VMS_SCHEDULE_INTERVAL_S{60};
 constexpr size_t DEFAULT_DETECT_FAILURES_INTERVAL_S{300};
 constexpr const char* DEFAULT_SCHEDULER_MODE = "full";
+constexpr size_t DEFAULT_USE_ZK_DIST_LOCK = 0;
 
 } // anonymous namespace
 
@@ -34,6 +35,8 @@ Config createConfig()
             "VMS_DETECT_FAILURES_INTERVAL_S", DEFAULT_DETECT_FAILURES_INTERVAL_S)},
         .mode = schedulerModeFromString(
             getFromEnvOrDefault("VMS_MODE", DEFAULT_SCHEDULER_MODE)),
+        .useZkDistLock = bool{getFromEnvOrDefault<size_t>(
+            "VMS_USE_ZK_DIST_LOCK", DEFAULT_USE_ZK_DIST_LOCK)},
     };
 }
 

@@ -1,4 +1,5 @@
 #include "libs/task_registry/include/task_registry.h"
+#include "libs/zookeeper/include/dist_lock.h"
 
 #include <libs/common/include/log.h>
 
@@ -13,7 +14,10 @@ TaskRegistry::TaskRegistry(
     std::unique_ptr<CloudClient>&& cloudClient)
     : id_("1234") // TODO: hostname
     , taskStorage_(std::move(taskStorage))
-    , scheduler_(id_, taskStorage_.get(), cloudClient->getPossibleSlots())
+    , distLock_(createDistLock(
+          config.useZkDistLock && (config.mode == SchedulerMode::FullScheduler ||
+                                   config.mode == SchedulerMode::CoreScheduler)))
+    , scheduler_(id_, taskStorage_.get(), cloudClient->getPossibleSlots(), distLock_)
     , allocator_(taskStorage_.get(), std::move(cloudClient))
     , failureDetector_(taskStorage_.get(), &allocator_)
     , grpcServer_(createServerConfig(), taskStorage_.get())

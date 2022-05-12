@@ -151,9 +151,10 @@ EXECUTE PROCEDURE update_job_log();
 
 CREATE TABLE scheduler.plan
 (
-    id         serial PRIMARY KEY,
-    created    timestamp with time zone NOT NULL,
-    updated    timestamp with time zone NOT NULL,
-    backend_id text
+    id          serial PRIMARY KEY,
+    created     timestamp with time zone NOT NULL,
+    updated     timestamp with time zone NOT NULL,
+    lock_number bigint,
+    backend_id  text
 );
 CREATE INDEX ON scheduler.plan (updated);
