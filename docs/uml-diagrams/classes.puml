@@ -16,8 +16,8 @@ class Scheduler
 interface VmAssigner
 interface OrderedJobs
 class Fifo
-class MinMin
-class MaxMin
+class Ascending
+class Descending
 interface JobAllocator
 class BestFit
 class WorstFit
@@ -30,8 +30,8 @@ VmAssigner <|.. SimpleVmAssigner
 VmAssigner <|.. ComplexVmAssigner
 ComplexVmAssigner *-- OrderedJobs
 OrderedJobs <|.. Fifo
-OrderedJobs <|.. MinMin
-OrderedJobs <|.. MaxMin
+OrderedJobs <|.. Ascending
+OrderedJobs <|.. Descending
 ComplexVmAssigner *-- JobAllocator
 JobAllocator <|.. BestFit
 JobAllocator <|.. WorstFit

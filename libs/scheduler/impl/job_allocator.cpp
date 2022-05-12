@@ -87,11 +87,11 @@ std::vector<VmId> NextFit::getIdleVms()
 
 WorstFit::WorstFit(std::vector<ActiveVm> vms)
 {
-    std::sort(
-        vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
-            return rhs.idleCapacity < lhs.idleCapacity;
-        });
-    vms_ = {vms.begin(), vms.end()}; // TODO: move
+    std::sort(vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
+        return rhs.idleCapacity < lhs.idleCapacity;
+    });
+    vms_ = {
+        std::make_move_iterator(vms.begin()), std::make_move_iterator(vms.end())};
 }
 
 std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
@@ -113,8 +113,7 @@ std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
                 ++prevIt;
                 ++nextIt;
             }
-            auto insertedIt =
-                vms_.insert_after(prevIt, std::move(activeVm));
+            auto insertedIt = vms_.insert_after(prevIt, std::move(activeVm));
             updatedVmIds_.insert(insertedIt->id);
             return insertedIt->id;
         }
@@ -150,7 +149,7 @@ BestFit::BestFit(std::vector<ActiveVm> vms)
     std::sort(vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
         return lhs.idleCapacity < rhs.idleCapacity;
     });
-    vms_ = {vms.begin(), vms.end()}; // TODO: move
+    vms_ = {std::make_move_iterator(vms.begin()), std::make_move_iterator(vms.end())};
 }
 
 std::optional<VmId> BestFit::allocate(const QueuedJobInfo& job)

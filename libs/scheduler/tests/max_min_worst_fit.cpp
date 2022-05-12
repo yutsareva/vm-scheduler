@@ -6,7 +6,7 @@
 using namespace vm_scheduler;
 namespace t = vm_scheduler::testing;
 
-TEST(MinMinWorstFitVmAssigner, assign)
+TEST(AscendingWorstFitVmAssigner, assign)
 {
     const auto initialState = State{
         .queuedJobs =
@@ -88,7 +88,7 @@ TEST(MinMinWorstFitVmAssigner, assign)
             },
     };
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MinMin,
+        .jobOrdering = JobOrdering::Ascending,
         .allocationStrategy = AllocationStrategy::WorstFit,
     };
     const auto possibleSlots = t::getPossibleSlots();

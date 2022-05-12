@@ -6,7 +6,7 @@
 using namespace vm_scheduler;
 namespace t = vm_scheduler::testing;
 
-TEST(MaxMinBestFitVmAssigner, assign)
+TEST(DescendingBestFitVmAssigner, assign)
 {
     const auto initialState = State{
         .queuedJobs =
@@ -46,7 +46,7 @@ TEST(MaxMinBestFitVmAssigner, assign)
             },
     };
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MaxMin,
+        .jobOrdering = JobOrdering::Descending,
         .allocationStrategy = AllocationStrategy::BestFit,
     };
     const auto possibleSlots = t::getPossibleSlots();
@@ -99,7 +99,7 @@ TEST(MaxMinBestFitVmAssigner, assign)
     t::checkStateConstrains(initialState, stateChange);
 }
 
-TEST(MaxMinBestFitVmAssigner, emptyJobs)
+TEST(DescendingBestFitVmAssigner, emptyJobs)
 {
     const auto initialState = State{
         .queuedJobs = {},
@@ -148,7 +148,7 @@ TEST(MaxMinBestFitVmAssigner, emptyJobs)
     };
 
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MaxMin,
+        .jobOrdering = JobOrdering::Descending,
         .allocationStrategy = AllocationStrategy::BestFit,
     };
     const auto possibleSlots = t::getPossibleSlots();
@@ -166,7 +166,7 @@ TEST(MaxMinBestFitVmAssigner, emptyJobs)
     t::checkStateConstrains(initialState, stateChange);
 }
 
-TEST(MaxMinBestFitVmAssigner, emptyVms)
+TEST(DescendingBestFitVmAssigner, emptyVms)
 {
     const auto initialState = State{
         .queuedJobs =
@@ -183,7 +183,7 @@ TEST(MaxMinBestFitVmAssigner, emptyVms)
         .vms = {},
     };
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MaxMin,
+        .jobOrdering = JobOrdering::Descending,
         .allocationStrategy = AllocationStrategy::BestFit,
     };
     const auto possibleSlots = t::getPossibleSlots();
@@ -225,7 +225,7 @@ TEST(MaxMinBestFitVmAssigner, emptyVms)
     t::checkStateConstrains(initialState, stateChange);
 }
 
-TEST(MaxMinBestFitVmAssigner, assignTest2)
+TEST(DescendingBestFitVmAssigner, assignTest2)
 {
     const auto initialState = State{
         .queuedJobs =
@@ -294,7 +294,7 @@ TEST(MaxMinBestFitVmAssigner, assignTest2)
             },
     };
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MaxMin,
+        .jobOrdering = JobOrdering::Descending,
         .allocationStrategy = AllocationStrategy::BestFit,
     };
     const auto possibleSlots = t::getPossibleSlots();
@@ -363,7 +363,7 @@ TEST(MaxMinBestFitVmAssigner, assignTest2)
 }
 
 
-TEST(MaxMinBestFitVmAssigner, assignTest3)
+TEST(DescendingBestFitVmAssigner, assignTest3)
 {
     const auto initialState = State{
         .queuedJobs =
@@ -445,7 +445,7 @@ TEST(MaxMinBestFitVmAssigner, assignTest3)
             },
     };
     const auto config = ComplexVmAssignerConfig{
-        .jobOrdering = JobOrdering::MaxMin,
+        .jobOrdering = JobOrdering::Descending,
         .allocationStrategy = AllocationStrategy::BestFit,
     };
     const auto possibleSlots = t::getPossibleSlots();
@@ -509,7 +509,7 @@ TEST(MaxMinBestFitVmAssigner, assignTest3)
                 6,
                 {
                     .cpu = 0_cores,
-                    .ram = 1_MB,
+                    .ram = 0_MB,
                 }
             },
         },

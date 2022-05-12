@@ -365,14 +365,14 @@ Result<void> PgTaskStorage::applyJobVmAssignments_(
     }
 
     std::stringstream tmpTable;
-    for (const auto& [jobId, vmOrSlotId] : vmAssignments) {
-        //        if (i != 0) {
-        //            tmpTable << ", ";
-        //        }
-        if (std::holds_alternative<DesiredSlotId>(vmOrSlotId)) {
-            tmpTable << "(" << jobId << ", " << slotsToVms[std::get<DesiredSlotId>(vmOrSlotId)] << ")";
+    for (auto it = vmAssignments.begin(); it != vmAssignments.end(); ++it) {
+        if (it != vmAssignments.begin()) {
+            tmpTable << ", ";
+        }
+        if (std::holds_alternative<DesiredSlotId>(it->second)) {
+            tmpTable << "(" << it->first << ", " << slotsToVms[std::get<DesiredSlotId>(it->second)] << ")";
         } else {
-            tmpTable << "(" << jobId << ", " << std::get<VmId>(vmOrSlotId) << ")";
+            tmpTable << "(" << it->first << ", " << std::get<VmId>(it->second) << ")";
         }
     }
 
@@ -973,6 +973,28 @@ Result<AllocatedVmInfos> PgTaskStorage::getAllocatedVms() noexcept
     } catch (const std::exception& ex) {
         return Result<AllocatedVmInfos>::Failure<PgException>(toString(
             "Unexpected pg exception while receiving allocated VMs: ", ex.what()));
+    }
+}
+
+
+Result<void> PgTaskStorage::cancelTimedOutJobs() noexcept
+{
+    const auto cancelTimedOutJobsQuery = toString(
+        "UPDATE scheduler.jobs "
+        "SET status = '", toString(JobStatus::Cancelled), "' "
+        "WHERE created + estimation < NOW() "
+        "AND status NOT IN ", pg::asFormattedList(getFinalJobStatuses()), " "
+        "RETURNING id;"
+    );
+
+    auto result = execWritableQuery_(cancelTimedOutJobsQuery);
+    if (result.IsSuccess()) {
+        auto cancelledJobIds = pg::extractIds<VmId>(result.ValueRefOrThrow());
+        INFO() << "Moved jobs to status " << toString(JobStatus::Cancelled)
+               << ": [" << joinSeq(cancelledJobIds) << "]";
+        return Result<void>::Success();
+    } else {
+        return Result<void>::Failure(std::move(result).ErrorOrThrow());
     }
 }
 

@@ -13,7 +13,6 @@
 
 #include <memory>
 
-
 using namespace vm_scheduler;
 using namespace std::chrono_literals;
 namespace t = vm_scheduler::testing;

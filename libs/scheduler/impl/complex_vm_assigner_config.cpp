@@ -9,8 +9,8 @@ JobOrdering jobOrderingFromString(const std::string& s)
 {
     const static std::unordered_map<std::string, JobOrdering> map = {
         {"fifo", JobOrdering::Fifo},
-        {"minmin", JobOrdering::MinMin},
-        {"maxmin", JobOrdering::MaxMin},
+        {"minmin", JobOrdering::Ascending},
+        {"maxmin", JobOrdering::Descending},
     };
     return map.at(s);
 }

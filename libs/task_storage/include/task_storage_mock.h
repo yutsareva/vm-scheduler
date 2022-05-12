@@ -108,6 +108,7 @@ public:
         (noexcept, override));
     MOCK_METHOD(
         Result<AllocatedVmInfos>, getAllocatedVms, (), (noexcept, override));
+    MOCK_METHOD(Result<void>, cancelTimedOutJobs, (), (noexcept, override));
 };
 
 } // namespace vm_scheduler::testing

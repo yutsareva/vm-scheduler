@@ -28,14 +28,14 @@ public:
     FifoOrderedJobs(std::vector<QueuedJobInfo>&& jobs);
 };
 
-class MinMinOrderedJobs : public OrderedJobs {
+class AscendingOrderedJobs : public OrderedJobs {
 public:
-    MinMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs);
+    AscendingOrderedJobs(std::vector<QueuedJobInfo>&& jobs);
 };
 
-class MaxMinOrderedJobs : public OrderedJobs {
+class DescendingOrderedJobs : public OrderedJobs {
 public:
-    MaxMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs);
+    DescendingOrderedJobs(std::vector<QueuedJobInfo>&& jobs);
 };
 
 std::unique_ptr<OrderedJobs> createOrderedJobs(

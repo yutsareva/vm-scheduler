@@ -35,6 +35,14 @@ struct SlotCapacity {
         return *this;
     }
 
+    SlotCapacity operator*(const size_t multiplier) const
+    {
+        return SlotCapacity{
+            .cpu = CpuCores(cpu.count() * multiplier),
+            .ram = MegaBytes(ram.count() * multiplier),
+        };
+    }
+
     SlotCapacity operator-(const SlotCapacity& other) const
     {
         return SlotCapacity{

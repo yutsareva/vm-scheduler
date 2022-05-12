@@ -101,6 +101,7 @@ private:
         const VmStatus targetStatus,
         const size_t vmRestartAttemptCount,
         const size_t jobRestartAttemptCount) noexcept;
+    Result<void> cancelTimedOutJobs() noexcept override;
 
 private:
     pg::PgPool pool_;

@@ -1,7 +1,8 @@
 #include "libs/scheduler/include/scheduler.h"
-#include "libs/common/include/errors.h"
 #include "libs/scheduler/include/create_vm_assigner.h"
 #include "libs/scheduler/include/vm_assigner.h"
+
+#include "libs/common/include/errors.h"
 
 #include <libs/common/include/log.h>
 
@@ -17,7 +18,23 @@ Scheduler::Scheduler(
     , config_(createSchedulerConfig())
     , possibleSlots_(std::move(possibleSlots))
     , distLock_(std::move(distLock))
-{ }
+{
+    if (possibleSlots_.empty()) {
+        throw RuntimeException("Possible slots array is empty");
+    }
+    if (!std::is_sorted(possibleSlots_.begin(), possibleSlots_.end())) {
+        throw RuntimeException("Possible slots array is not sorted");
+    }
+
+    for (size_t i = 0; i + 1 < possibleSlots_.size(); ++i) {
+        if (possibleSlots_[i] * 2 != possibleSlots_[i + 1]) {
+            throw RuntimeException(
+                toString(
+                    "Possible slots error: 2 * item[", i, "] != item[", i + 1, "]: ",
+                    "2 * ", possibleSlots_[i], " != ", possibleSlots_[i + 1]));
+        }
+    }
+}
 
 void Scheduler::schedule() noexcept
 {

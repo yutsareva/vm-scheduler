@@ -60,6 +60,16 @@ void FailureDetector::handleUntrackedVms_() noexcept
     allocator_->terminateUntrackedVms();
 }
 
+void FailureDetector::cancelTimedOutJobs() noexcept
+{
+    const auto cancelTimedOutJobsResult
+        = taskStorage_->cancelTimedOutJobs();
+    if (cancelTimedOutJobsResult.IsFailure()) {
+        ERROR() << "Failed to cancel tasks with exceeded time limit: "
+                << what(cancelTimedOutJobsResult.ErrorRefOrThrow());
+    }
+}
+
 void FailureDetector::monitor() noexcept
 {
     INFO() << "Failure detector iteration started";
@@ -67,6 +77,8 @@ void FailureDetector::monitor() noexcept
     handleInactiveAgents_();
     handleVmsWithoutAgents_();
     handleUntrackedVms_();
+    cancelTimedOutJobs();
+    INFO() << "Failure detector iteration finished";
 }
 
 } // namespace vm_scheduler

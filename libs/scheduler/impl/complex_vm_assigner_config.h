@@ -6,8 +6,8 @@ namespace vm_scheduler {
 
 enum class JobOrdering {
     Fifo /*"fifo"*/,
-    MinMin /*"minmin"*/,
-    MaxMin /*"maxmin"*/,
+    Ascending /*"minmin"*/,
+    Descending /*"maxmin"*/,
 };
 
 JobOrdering jobOrderingFromString(const std::string& s);

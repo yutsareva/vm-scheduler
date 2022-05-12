@@ -34,15 +34,16 @@ void setupEnv()
     setenv("PG_POOL_SIZE", "10", true);
 }
 
-void checkAllJobsFailed(const proto::TaskExecutionResult& taskResult)
+void checkJobStatuses(const proto::TaskExecutionResult& taskResult, const proto::JobStatus& status)
 {
     EXPECT_EQ(taskResult.status(), proto::TaskStatus::TASK_COMPLETED);
     EXPECT_EQ(taskResult.job_results().size(), 2);
     EXPECT_FALSE(taskResult.job_results()[0].has_result_url());
-    EXPECT_EQ(taskResult.job_results()[0].status(), proto::JobStatus::JOB_FAILED);
+    EXPECT_EQ(taskResult.job_results()[0].status(), status);
     EXPECT_FALSE(taskResult.job_results()[1].has_result_url());
-    EXPECT_EQ(taskResult.job_results()[1].status(), proto::JobStatus::JOB_FAILED);
+    EXPECT_EQ(taskResult.job_results()[1].status(), status);
 }
+
 } // namespace
 
 TEST(fail_tasks, non_working_allocator)
@@ -60,6 +61,13 @@ TEST(fail_tasks, non_working_allocator)
             "Unexpected exception while requesting a VM")));
     EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
         .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
         std::make_unique<PgTaskStorage>(pg::createPool()),
@@ -68,7 +76,7 @@ TEST(fail_tasks, non_working_allocator)
     const auto protoTaskAdditionResult = t::addTask();
     const auto taskResult =
         t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
-    checkAllJobsFailed(taskResult);
+    checkJobStatuses(taskResult, proto::JobStatus::JOB_FAILED);
 }
 
 TEST(fail_tasks, non_working_agent)
@@ -91,6 +99,13 @@ TEST(fail_tasks, non_working_agent)
         .WillRepeatedly(Return(Result<void>::Success()));
     EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
         .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
@@ -100,9 +115,8 @@ TEST(fail_tasks, non_working_agent)
     const auto protoTaskAdditionResult = t::addTask();
     const auto taskResult =
         t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
-    checkAllJobsFailed(taskResult);
+    checkJobStatuses(taskResult, proto::JobStatus::JOB_FAILED);
 }
-
 
 TEST(TerminateUntracked, simple)
 {
@@ -122,6 +136,13 @@ TEST(TerminateUntracked, simple)
         .WillOnce(Return(Result{AllocatedVmInfos{allocatedVmInfo}}));
     EXPECT_CALL(*cloudClientMock, terminate(_))
         .WillOnce(Return(Result<void>::Success()));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
         config,
@@ -129,4 +150,42 @@ TEST(TerminateUntracked, simple)
         std::move(cloudClientMock));
 
     std::this_thread::sleep_for(0.5s);
+}
+
+
+TEST(CancelJobs, timedOutJobs)
+{
+    setupEnv();
+
+    const Config config = {
+        .allocationInterval = 10s,
+        .scheduleInterval = 10s,
+        .detectFailuresInterval = 1s,
+    };
+    auto cloudClientMock = std::make_unique<t::CloudClientMock>();
+    EXPECT_CALL(*cloudClientMock, allocate(_, _))
+        .WillRepeatedly(Return(Result{AllocatedVmInfo{}}));
+    EXPECT_CALL(*cloudClientMock, terminate(_))
+        .WillRepeatedly(Return(Result<void>::Success()));
+    EXPECT_CALL(*cloudClientMock, getAllAllocatedVms())
+        .WillRepeatedly(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(*cloudClientMock, getPossibleSlots())
+        .WillOnce(Return(std::vector<SlotCapacity>{
+            SlotCapacity{
+                .cpu = 1_cores,
+                .ram = 1024_MB,
+            },
+        }));
+
+    auto taskRegistry = std::make_unique<TaskRegistry>(
+        config,
+        std::make_unique<PgTaskStorage>(pg::createPool()),
+        std::move(cloudClientMock));
+
+    auto protoTask = t::generateProtoTask();
+    protoTask.mutable_limits()->set_execution_s(1);
+
+    const auto protoTaskAdditionResult = t::addTask(protoTask);
+    const auto taskResult = t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
+    checkJobStatuses(taskResult, proto::JobStatus::JOB_CANCELLED);
 }

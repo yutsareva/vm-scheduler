@@ -6,7 +6,7 @@ FifoOrderedJobs::FifoOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
     : OrderedJobs(std::move(jobs))
 { }
 
-MinMinOrderedJobs::MinMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
+AscendingOrderedJobs::AscendingOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
     : OrderedJobs(std::move(jobs))
 {
     std::sort(
@@ -17,7 +17,7 @@ MinMinOrderedJobs::MinMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
         });
 }
 
-MaxMinOrderedJobs::MaxMinOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
+DescendingOrderedJobs::DescendingOrderedJobs(std::vector<QueuedJobInfo>&& jobs)
     : OrderedJobs(std::move(jobs))
 {
     std::sort(
@@ -34,10 +34,10 @@ std::unique_ptr<OrderedJobs> createOrderedJobs(
     switch (type) {
         case JobOrdering::Fifo:
             return std::make_unique<FifoOrderedJobs>(std::move(jobs));
-        case JobOrdering::MinMin:
-            return std::make_unique<MinMinOrderedJobs>(std::move(jobs));
-        case JobOrdering::MaxMin:
-            return std::make_unique<MaxMinOrderedJobs>(std::move(jobs));
+        case JobOrdering::Ascending:
+            return std::make_unique<AscendingOrderedJobs>(std::move(jobs));
+        case JobOrdering::Descending:
+            return std::make_unique<DescendingOrderedJobs>(std::move(jobs));
     }
 }
 

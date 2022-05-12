@@ -5,7 +5,8 @@
 
 namespace vm_scheduler {
 
-constexpr size_t DEFAULT_SCHEDULING_INTERVAL_S{60};
+// should be less than task_registry.config.scheduleInterval
+constexpr size_t DEFAULT_SCHEDULING_INTERVAL_S { 40 };
 
 SchedulerConfig createSchedulerConfig()
 {
