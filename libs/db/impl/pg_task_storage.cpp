@@ -975,4 +975,26 @@ Result<AllocatedVmInfos> PgTaskStorage::getAllocatedVms() noexcept
     }
 }
 
+
+Result<void> PgTaskStorage::cancelTimedOutJobs() noexcept
+{
+    const auto cancelTimedOutJobsQuery = toString(
+        "UPDATE scheduler.jobs "
+        "SET status = '", toString(JobStatus::Cancelled), "' "
+        "WHERE created + estimation < NOW() "
+        "AND status NOT IN ", pg::asFormattedList(getFinalJobStatuses()), " "
+        "RETURNING id;"
+    );
+
+    auto result = execWritableQuery_(cancelTimedOutJobsQuery);
+    if (result.IsSuccess()) {
+        auto cancelledJobIds = pg::extractIds<VmId>(result.ValueRefOrThrow());
+        INFO() << "Moved jobs to status " << toString(JobStatus::Cancelled)
+               << ": [" << joinSeq(cancelledJobIds) << "]";
+        return Result<void>::Success();
+    } else {
+        return Result<void>::Failure(std::move(result).ErrorOrThrow());
+    }
+}
+
 } // namespace vm_scheduler

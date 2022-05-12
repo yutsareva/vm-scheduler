@@ -14,7 +14,7 @@ proto::Task generateProtoTask()
     job_limits.set_cpu_cores(2);
     proto::TaskLimits limits;
     *limits.mutable_job_limits() = std::move(job_limits);
-    limits.set_execution_s(3);
+    limits.set_execution_s(60);
 
     proto::Task task;
     *task.mutable_limits() = std::move(limits);

@@ -18,6 +18,7 @@ private:
     void handleInactiveAgents_() noexcept;
     void handleVmsWithoutAgents_() noexcept;
     void handleUntrackedVms_() noexcept;
+    void cancelTimedOutJobs() noexcept;
 
 private:
     FailureDetectorConfig config_;

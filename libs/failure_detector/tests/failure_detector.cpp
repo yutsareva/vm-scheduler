@@ -33,6 +33,8 @@ TEST(FailureDetector, simple)
         .WillOnce(Return(Result<void>::Success()));
     EXPECT_CALL(taskStorageMock, getAllocatedVms())
         .WillOnce(Return(Result{AllocatedVmInfos{}}));
+    EXPECT_CALL(taskStorageMock, cancelTimedOutJobs())
+        .WillOnce(Return(Result<void>::Success()));
 
     failureDetector.monitor();
 }
