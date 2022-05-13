@@ -27,7 +27,7 @@ CREATE TABLE scheduler.vms
     restart_count      integer                  NOT NULL DEFAULT 0
 );
 
-CREATE INDEX vms_non_final_statuses ON scheduler.vms(status)
+CREATE INDEX vms_non_final_statuses ON scheduler.vms (status)
     WHERE status != 'terminated';
 
 CREATE OR REPLACE FUNCTION update_last_status_update() RETURNS TRIGGER AS
@@ -115,10 +115,10 @@ CREATE TABLE scheduler.jobs
     restart_count integer                  NOT NULL DEFAULT 0
 );
 
-CREATE INDEX jobs_non_final_statuses ON scheduler.jobs(status)
+CREATE INDEX jobs_non_final_statuses ON scheduler.jobs (status)
     WHERE status NOT IN ('cancelled', 'completed', 'error', 'internal_error');
-CREATE INDEX jobs_task_id ON scheduler.jobs(task_id);
-CREATE INDEX jobs_vm_id ON scheduler.jobs(vm_id);
+CREATE INDEX jobs_task_id ON scheduler.jobs (task_id);
+CREATE INDEX jobs_vm_id ON scheduler.jobs (vm_id);
 
 -- ************************************ Job statuses log table ***********************
 
@@ -163,5 +163,5 @@ CREATE INDEX ON scheduler.plan (updated);
 
 CREATE TABLE scheduler.locks
 (
-    id          bigint PRIMARY KEY
+    id bigint PRIMARY KEY
 );
