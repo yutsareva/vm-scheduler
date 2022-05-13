@@ -61,6 +61,7 @@ public:
         const JobId jobId,
         const JobState& jobState) noexcept override;
     Result<AllocatedVmInfos> getAllocatedVms() noexcept override;
+    Result<void> cancelTimedOutJobs() noexcept override;
 
 private:
     Result<bool> isSchedulingRelevant_(
@@ -101,7 +102,8 @@ private:
         const VmStatus targetStatus,
         const size_t vmRestartAttemptCount,
         const size_t jobRestartAttemptCount) noexcept;
-    Result<void> cancelTimedOutJobs() noexcept override;
+    Result<void> checkLeader_(
+        pqxx::transaction_base& txn, const size_t lockNumber) noexcept;
 
 private:
     pg::PgPool pool_;

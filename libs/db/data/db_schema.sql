@@ -158,3 +158,10 @@ CREATE TABLE scheduler.plan
     backend_id  text
 );
 CREATE INDEX ON scheduler.plan (updated);
+
+-- ************************************ Lock table ***********************************
+
+CREATE TABLE scheduler.locks
+(
+    id          bigint PRIMARY KEY
+);

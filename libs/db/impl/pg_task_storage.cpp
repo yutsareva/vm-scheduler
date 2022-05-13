@@ -109,18 +109,22 @@ Result<PlanId> PgTaskStorage::startScheduling(
     const std::chrono::seconds& schedulingInterval,
     const std::optional<size_t>& lockNumber) noexcept
 {
-    const bool noWait = true;
+    const bool noWait = !lockNumber;
     auto txnResult = acquireLock_(noWait);
     if (txnResult.IsFailure()) {
         return Result<PlanId>::Failure(std::move(txnResult).ErrorOrThrow());
     }
     auto handler = std::move(txnResult).ValueOrThrow();
     auto& txn = *(handler);
+    if (lockNumber) {
+        checkLeader_(txn, *lockNumber);
+    }
 
     auto recentlyUpdatedResult = planWasRecentlyUpdated_(txn, schedulingInterval);
     if (recentlyUpdatedResult.IsFailure()) {
         return Result<PlanId>::Failure(std::move(recentlyUpdatedResult).ErrorOrThrow());
     } else if (recentlyUpdatedResult.ValueRefOrThrow()) {
+        txn.commit();
         return Result<PlanId>::Failure<SchedulingCancelled>(
             "The plan was recently updated, new scheduling is not needed yet");
     }
@@ -255,6 +259,31 @@ Result<pg::TransactionHandle> PgTaskStorage::acquireLock_(const bool noWait) noe
     } catch (const std::exception& ex) {
         return Result<pg::TransactionHandle>::Failure<PgException>(toString(
             "Unexpected exception while acquiring lock: ", ex.what()));
+    }
+}
+
+Result<void> checkLeader_(
+    pqxx::transaction_base& txn, const size_t lockNumber) noexcept
+{
+    const auto checkLeaderQuery =
+        "SELECT COALESCE(MAX(id), 0) as max_id FROM scheduler.locks;";
+    try {
+        const auto result = pg::execQuery(checkLeaderQuery, txn);
+        const auto maxId = result[0].at("max_id").as<size_t>();
+        if (lockNumber != maxId) {
+            INFO() << "Max lock number: " << maxId << ", "
+                   << "current lock number: " << lockNumber;
+            if (lockNumber > maxId) {
+                INFO() << "Inserting new lock number: " << lockNumber;
+                const auto insertNewLockNumberQuery =
+                    toString("INSERT INTO scheduler.locks (max_id) VALUES (", lockNumber, ");");
+                pg::execQuery(insertNewLockNumberQuery, txn);
+            }
+        }
+        return Result<void>::Success();
+    } catch (const std::exception& ex) {
+        return Result<void>::Failure<PgException>(toString(
+            "Unexpected exception while checking lock number: ", ex.what()));
     }
 }
 
