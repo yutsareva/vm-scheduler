@@ -1,5 +1,4 @@
 @startuml
-
 hide circle
 skinparam linetype ortho
 
@@ -26,6 +25,11 @@ entity "**jobs**" {
   ""finished"": //timestamp with time zone //
   ""vm_id"": //integer [FK]//
   *""restart_count"": //integer //
+}
+
+entity "**locks**" {
+  + ""id"": //bigint [PK]//
+  --
 }
 
 entity "**plan**" {
@@ -75,5 +79,4 @@ entity "**vms**" {
 "**jobs**"   }--  "**vms**"
 
 "**vm_statuses_log**"   }--  "**vms**"
-
 @enduml
