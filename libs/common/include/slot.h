@@ -1,5 +1,6 @@
 #pragma once
 
+#include "libs/common/include/hash.h"
 #include "libs/common/include/types.h"
 
 namespace vm_scheduler {
@@ -23,8 +24,12 @@ struct SlotCapacity {
 
     SlotCapacity& operator-=(const SlotCapacity& other)
     {
-        cpu = CpuCores(cpu.count() - other.cpu.count());
-        ram = MegaBytes(ram.count() - other.ram.count());
+        cpu = CpuCores(std::max(
+            static_cast<int>(cpu.count()) - static_cast<int>(other.cpu.count()),
+            0));
+        ram = MegaBytes(std::max(
+            static_cast<int>(ram.count()) - static_cast<int>(other.ram.count()),
+            0));
         return *this;
     }
 
@@ -45,13 +50,23 @@ struct SlotCapacity {
 
     SlotCapacity operator-(const SlotCapacity& other) const
     {
-        return SlotCapacity{
-            .cpu = CpuCores(cpu.count() - other.cpu.count()),
-            .ram = MegaBytes(ram.count() - other.ram.count()),
-        };
+        SlotCapacity slot = *this;
+        slot -= other;
+        return slot;
     }
 };
 
 std::ostream& operator<<(std::ostream& out, const SlotCapacity& capacity);
 
 } // namespace vm_scheduler
+
+template<>
+struct std::hash<vm_scheduler::SlotCapacity> {
+    size_t operator()(const vm_scheduler::SlotCapacity& slot) const
+    {
+        std::size_t result = 0;
+        vm_scheduler::hash_combine(result, slot.cpu.count());
+        vm_scheduler::hash_combine(result, slot.ram.count());
+        return result;
+    }
+};

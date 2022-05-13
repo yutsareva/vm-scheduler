@@ -14,10 +14,10 @@ TEST(Scheduler, schedule)
 {
     t::TaskStorageMock taskStorageMock;
     const auto possibleSlots = t::getPossibleSlots();
-    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots);
+    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots, nullptr);
 
     EXPECT_CALL(taskStorageMock, addTask).Times(0);
-    EXPECT_CALL(taskStorageMock, startScheduling(_, _))
+    EXPECT_CALL(taskStorageMock, startScheduling(_, _, _))
         .WillOnce(Return(Result{PlanId{456}}));
     EXPECT_CALL(taskStorageMock, getCurrentState())
         .WillOnce(Return(Result{State{}}));
@@ -31,9 +31,9 @@ TEST(Scheduler, schedulingCancelled)
 {
     t::TaskStorageMock taskStorageMock;
     const auto possibleSlots = t::getPossibleSlots();
-    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots);
+    Scheduler scheduler("backendId", &taskStorageMock, possibleSlots, nullptr);
 
-    EXPECT_CALL(taskStorageMock, startScheduling(_, _))
+    EXPECT_CALL(taskStorageMock, startScheduling(_, _, _))
         .WillOnce(Return(Result<PlanId>::Failure<RuntimeException>(
             "The plan was recently updated, new scheduling is not needed yet")));
     EXPECT_CALL(taskStorageMock, getCurrentState).Times(0);

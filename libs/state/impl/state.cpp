@@ -33,12 +33,12 @@ std::ostream& operator<<(std::ostream& out, const StateChange& stateChange)
     for (const auto& [desiredSlotId, desiredSlot] : stateChange.desiredSlotMap) {
         out << "{ id: " << desiredSlotId.value << ", "
             << "total capacity: " << desiredSlot.total << ", "
-            << "idle capacity: " << desiredSlot.idle << " }";
+            << "idle capacity: " << desiredSlot.idle << " }, ";
     }
     out << "], VM capacities updates: [";
     for (const auto& [vmId, capacity] : stateChange.updatedIdleCapacities) {
         out << "{ id: " << vmId << ", "
-            << "new idle capacity: " << capacity << "} ";
+            << "new idle capacity: " << capacity << "}, ";
     }
     out << "], VMs to terminate: [" << joinSeq(stateChange.vmsToTerminate);
     out << "]";

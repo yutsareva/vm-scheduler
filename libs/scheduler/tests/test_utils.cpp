@@ -11,6 +11,14 @@ std::vector<SlotCapacity> getPossibleSlots()
             .ram = 512_MB,
         },
         {
+            .cpu = 1_cores,
+            .ram = 1024_MB,
+        },
+        {
+            .cpu = 1_cores,
+            .ram = 2048_MB,
+        },
+        {
             .cpu = 2_cores,
             .ram = 1024_MB,
         },

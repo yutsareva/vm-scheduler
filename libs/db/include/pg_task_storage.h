@@ -85,7 +85,7 @@ private:
     Result<void> applyJobVmAssignments_(
         pqxx::transaction_base& txn,
         const JobToVm& vmAssignments,
-        std::unordered_map<DesiredSlotId, VmId> slotsToVms) noexcept;
+        const std::unordered_map<DesiredSlotId, VmId>& slotsToVms) noexcept;
     Result<std::vector<QueuedJobInfo>> getQueuedJobs_(
         pqxx::transaction_base& txn) noexcept;
     Result<std::vector<ActiveVm>> getActiveVms_(pqxx::transaction_base& txn) noexcept;
@@ -104,6 +104,7 @@ private:
         const size_t jobRestartAttemptCount) noexcept;
     Result<void> checkLeader_(
         pqxx::transaction_base& txn, const size_t lockNumber) noexcept;
+    Result<void> cancelJobs_(const std::string& condition);
 
 private:
     pg::PgPool pool_;

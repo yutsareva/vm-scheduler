@@ -25,15 +25,6 @@ Scheduler::Scheduler(
     if (!std::is_sorted(possibleSlots_.begin(), possibleSlots_.end())) {
         throw RuntimeException("Possible slots array is not sorted");
     }
-
-    for (size_t i = 0; i + 1 < possibleSlots_.size(); ++i) {
-        if (possibleSlots_[i] * 2 != possibleSlots_[i + 1]) {
-            throw RuntimeException(
-                toString(
-                    "Possible slots error: 2 * item[", i, "] != item[", i + 1, "]: ",
-                    "2 * ", possibleSlots_[i], " != ", possibleSlots_[i + 1]));
-        }
-    }
 }
 
 void Scheduler::schedule() noexcept
