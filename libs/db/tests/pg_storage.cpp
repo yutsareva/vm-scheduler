@@ -1,9 +1,8 @@
-#include "libs/db/include/pg_task_storage.h"
 #include "libs/db/impl/test_utils.h"
+#include "libs/db/include/pg_task_storage.h"
 #include "libs/db/tests/helpers.h"
 
 #include <libs/task_storage/include/task_storage.h>
-#include <libs/scheduler/include/scheduler.h>
 #include <libs/common/include/stringify.h>
 #include <libs/state/include/task.h>
 
@@ -13,11 +12,9 @@
 
 #include <memory>
 
-
 using namespace vm_scheduler;
 using namespace std::chrono_literals;
 namespace t = vm_scheduler::testing;
-
 
 TEST(StartScheduling, exclusiveLock)
 {
@@ -29,7 +26,8 @@ TEST(StartScheduling, exclusiveLock)
     const auto lock = "LOCK TABLE scheduler.plan IN ROW EXCLUSIVE MODE;";
     pg::execQuery(lock, *txn);
 
-    const auto planIdResult = pgTaskStorage.startScheduling("backendId", 2s);
+    const auto planIdResult =
+        pgTaskStorage.startScheduling("backendId", 2s, std::nullopt);
     EXPECT_TRUE(planIdResult.IsFailure());
 }
 
@@ -38,13 +36,16 @@ TEST(StartScheduling, consecutiveStartScheduling)
     t::setupEnv();
     PgTaskStorage pgTaskStorage(pg::createPool());
 
-    const auto firstPlanIdResult = pgTaskStorage.startScheduling("backendId", 2s);
+    const auto firstPlanIdResult =
+        pgTaskStorage.startScheduling("backendId", 2s, std::nullopt);
     EXPECT_TRUE(firstPlanIdResult.IsSuccess());
 
-    const auto secondPlanIdResult = pgTaskStorage.startScheduling("backendId", 2s);
+    const auto secondPlanIdResult =
+        pgTaskStorage.startScheduling("backendId", 2s, std::nullopt);
     EXPECT_TRUE(secondPlanIdResult.IsFailure());
 
-    const auto thirdPlanIdResult = pgTaskStorage.startScheduling("backendId", 0s);
+    const auto thirdPlanIdResult =
+        pgTaskStorage.startScheduling("backendId", 0s, std::nullopt);
     EXPECT_TRUE(thirdPlanIdResult.IsSuccess());
 }
 
@@ -69,69 +70,81 @@ TEST(CommitPlanChange, fulScenario)
     const auto jobIdResult = pgTaskStorage.addTask(taskParameters);
     EXPECT_TRUE(jobIdResult.IsSuccess());
 
-    const auto planIdResult = pgTaskStorage.startScheduling("backendId", 2s);
+    const auto planIdResult =
+        pgTaskStorage.startScheduling("backendId", 2s, std::nullopt);
     EXPECT_TRUE(planIdResult.IsSuccess());
 
     const auto stateChange = StateChange{
-        .jobToVm = {
+        .jobToVm =
             {
-                1,
-                DesiredSlotId(1),
+                {
+                    1,
+                    DesiredSlotId(1),
+                },
             },
-        },
-        .desiredSlotMap = {
+        .desiredSlotMap =
             {
-                DesiredSlotId(1),
-                DesiredSlot{
-                    .total = SlotCapacity{
-                        .cpu = 3_cores,
-                        .ram = 4096_MB,
-                    },
-                    .idle = SlotCapacity{
-                        .cpu = 1_cores,
-                        .ram = 1024_MB,
+                {
+                    DesiredSlotId(1),
+                    DesiredSlot{
+                        .total =
+                            SlotCapacity{
+                                .cpu = 3_cores,
+                                .ram = 4096_MB,
+                            },
+                        .idle =
+                            SlotCapacity{
+                                .cpu = 1_cores,
+                                .ram = 1024_MB,
+                            },
                     },
                 },
             },
-        },
-        .updatedIdleCapacities = { },
-        .vmsToTerminate = { },
+        .updatedIdleCapacities = {},
+        .vmsToTerminate = {},
     };
 
-    auto commitResult = pgTaskStorage.commitPlanChange(stateChange, planIdResult.ValueRefOrThrow());
+    auto commitResult = pgTaskStorage.commitPlanChange(
+        stateChange, planIdResult.ValueRefOrThrow());
     EXPECT_TRUE(commitResult.IsSuccess());
 
     const auto currentStateResult = pgTaskStorage.getCurrentState();
     EXPECT_TRUE(currentStateResult.IsSuccess());
 
     const auto expectedState = State{
-        .queuedJobs = { },
-        .vms = {
-            ActiveVm{
-                .id = 1,
-                .totalCapacity = SlotCapacity{
-                    .cpu = 3_cores,
-                    .ram = 4096_MB,
-                },
-                .idleCapacity = SlotCapacity{
-                    .cpu = 1_cores,
-                    .ram = 1024_MB,
+        .queuedJobs = {},
+        .vms =
+            {
+                ActiveVm{
+                    .id = 1,
+                    .totalCapacity =
+                        SlotCapacity{
+                            .cpu = 3_cores,
+                            .ram = 4096_MB,
+                        },
+                    .idleCapacity =
+                        SlotCapacity{
+                            .cpu = 1_cores,
+                            .ram = 1024_MB,
+                        },
                 },
             },
-        },
     };
     EXPECT_EQ(expectedState, currentStateResult.ValueRefOrThrow());
 
     auto pool = pg::createPool();
     auto txn = pool.writableTransaction();
-    const auto lock = toString("SELECT status, cpu, ram FROM scheduler.jobs WHERE id = ",
-                               jobIdResult.ValueRefOrThrow().jobIds[0], ";");
+    const auto lock = toString(
+        "SELECT status, cpu, ram FROM scheduler.jobs WHERE id = ",
+        jobIdResult.ValueRefOrThrow().jobIds[0],
+        ";");
     const auto result = pg::execQuery(lock, *txn);
-    EXPECT_EQ(jobStatusFromString(result[0].at("status").as<std::string>()), JobStatus::Scheduled);
+    EXPECT_EQ(
+        jobStatusFromString(result[0].at("status").as<std::string>()),
+        JobStatus::Scheduled);
     EXPECT_EQ(result[0].at("cpu").as<size_t>(), 1u);
     EXPECT_EQ(result[0].at("ram").as<size_t>(), 1024u);
 }
-
 
 TEST(Allocation, allocate)
 {
@@ -147,28 +160,35 @@ TEST(Allocation, allocate)
     const std::vector<AllocationPendingVmInfo> expectedVmInfos = {
         AllocationPendingVmInfo{
             .id = vmId,
-            .capacity = {
-                .cpu = 2_cores,
-                .ram = 2048_MB,
-            },
+            .capacity =
+                {
+                    .cpu = 2_cores,
+                    .ram = 2048_MB,
+                },
         },
     };
     EXPECT_EQ(vmsToAllocate, expectedVmInfos);
 
-    const auto vmStatusQuery = toString("SELECT status FROM scheduler.vms WHERE id = ", vmId, ";");
+    const auto vmStatusQuery =
+        toString("SELECT status FROM scheduler.vms WHERE id = ", vmId, ";");
     auto readTxn = pool.readOnlyTransaction();
     const auto firstVmStatusResult = pg::execQuery(vmStatusQuery, *readTxn);
-    EXPECT_EQ(vmStatusFromString(firstVmStatusResult[0].at("status").as<std::string>()), VmStatus::Allocating);
+    EXPECT_EQ(
+        vmStatusFromString(firstVmStatusResult[0].at("status").as<std::string>()),
+        VmStatus::Allocating);
 
     const auto allocatedVmInfo = AllocatedVmInfo{
         .id = "cloud vm id",
         .type = "cloud vm type",
     };
-    const auto saveAllocationResult = pgTaskStorage.saveVmAllocationResult(vmId, allocatedVmInfo);
+    const auto saveAllocationResult =
+        pgTaskStorage.saveVmAllocationResult(vmId, allocatedVmInfo);
     EXPECT_TRUE(saveAllocationResult.IsSuccess());
 
     const auto secondVmStatusResult = pg::execQuery(vmStatusQuery, *readTxn);
-    EXPECT_EQ(vmStatusFromString(secondVmStatusResult[0].at("status").as<std::string>()), VmStatus::Allocated);
+    EXPECT_EQ(
+        vmStatusFromString(secondVmStatusResult[0].at("status").as<std::string>()),
+        VmStatus::Allocated);
 }
 
 TEST(Allocation, empty)
@@ -201,16 +221,22 @@ TEST(Termination, terminate)
     };
     EXPECT_EQ(vmsToTerminate, expectedVmInfos);
 
-    const auto vmStatusQuery = toString("SELECT status FROM scheduler.vms WHERE id = ", vmId, ";");
+    const auto vmStatusQuery =
+        toString("SELECT status FROM scheduler.vms WHERE id = ", vmId, ";");
     auto readTxn = pool.readOnlyTransaction();
     const auto firstVmStatusResult = pg::execQuery(vmStatusQuery, *readTxn);
-    EXPECT_EQ(vmStatusFromString(firstVmStatusResult[0].at("status").as<std::string>()), VmStatus::Terminating);
+    EXPECT_EQ(
+        vmStatusFromString(firstVmStatusResult[0].at("status").as<std::string>()),
+        VmStatus::Terminating);
 
-    const auto saveTerminationResult = pgTaskStorage.saveVmTerminationResult(vmId);
+    const auto saveTerminationResult =
+        pgTaskStorage.saveVmTerminationResult(vmId);
     EXPECT_TRUE(saveTerminationResult.IsSuccess());
 
     const auto secondVmStatusResult = pg::execQuery(vmStatusQuery, *readTxn);
-    EXPECT_EQ(vmStatusFromString(secondVmStatusResult[0].at("status").as<std::string>()), VmStatus::Terminated);
+    EXPECT_EQ(
+        vmStatusFromString(secondVmStatusResult[0].at("status").as<std::string>()),
+        VmStatus::Terminated);
 }
 
 TEST(Termination, empty)
@@ -245,8 +271,11 @@ TEST(Cancellation, cancelQueued)
     const auto jobStates = pgTaskStorage.getJobStates(createdJobs.taskId);
     EXPECT_TRUE(jobStates.IsSuccess());
     EXPECT_TRUE(std::all_of(
-        jobStates.ValueRefOrThrow().cbegin(), jobStates.ValueRefOrThrow().cend(),
-        [](const JobState& jobState){ return jobState.status == JobStatus::Cancelled; }));
+        jobStates.ValueRefOrThrow().cbegin(),
+        jobStates.ValueRefOrThrow().cend(),
+        [](const JobState& jobState) {
+            return jobState.status == JobStatus::Cancelled;
+        }));
 }
 
 TEST(Cancellation, cancelScheduled)
@@ -262,17 +291,26 @@ TEST(Cancellation, cancelScheduled)
     auto writeTxn = pool.writableTransaction();
     const auto updateJobsQuery = toString(
         "UPDATE scheduler.jobs ",
-        "SET status = '", toString(JobStatus::Scheduled), "' ",
-        "WHERE id IN (", joinSeq(jobsResult.ValueRefOrThrow().jobIds), ");");
+        "SET status = '",
+        toString(JobStatus::Scheduled),
+        "' ",
+        "WHERE id IN (",
+        joinSeq(jobsResult.ValueRefOrThrow().jobIds),
+        ");");
     pg::execQuery(updateJobsQuery, *writeTxn);
     writeTxn->commit();
 
-    const auto cancelResult = pgTaskStorage.cancelTask(jobsResult.ValueRefOrThrow().taskId);
+    const auto cancelResult =
+        pgTaskStorage.cancelTask(jobsResult.ValueRefOrThrow().taskId);
     EXPECT_TRUE(cancelResult.IsSuccess());
 
-    const auto jobStates = pgTaskStorage.getJobStates(jobsResult.ValueRefOrThrow().taskId);
+    const auto jobStates =
+        pgTaskStorage.getJobStates(jobsResult.ValueRefOrThrow().taskId);
     EXPECT_TRUE(jobStates.IsSuccess());
     EXPECT_TRUE(std::all_of(
-        jobStates.ValueRefOrThrow().cbegin(), jobStates.ValueRefOrThrow().cend(),
-        [](const JobState& jobState){ return jobState.status == JobStatus::Cancelling; }));
+        jobStates.ValueRefOrThrow().cbegin(),
+        jobStates.ValueRefOrThrow().cend(),
+        [](const JobState& jobState) {
+            return jobState.status == JobStatus::Cancelling;
+        }));
 }

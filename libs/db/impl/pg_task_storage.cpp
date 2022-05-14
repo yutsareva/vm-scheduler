@@ -306,7 +306,8 @@ Result<pg::TransactionHandle> PgTaskStorage::acquireLock_(const bool noWait) noe
     }
 }
 
-Result<void> checkLeader_(pqxx::transaction_base& txn, const size_t lockNumber) noexcept
+Result<void> PgTaskStorage::checkLeader_(
+    pqxx::transaction_base& txn, const size_t lockNumber) noexcept
 {
     const auto checkLeaderQuery =
         "SELECT COALESCE(MAX(id), 0) as max_id FROM scheduler.locks;";
@@ -677,19 +678,34 @@ Result<void> PgTaskStorage::saveVmTerminationResult(const VmId vmId) noexcept
 Result<void> PgTaskStorage::cancelJobs_(const std::string& condition)
 {
     const auto cancelJobsQuery = toString(
-        "UPDATE scheduler.jobs "
-        "SET status = '",
+        "UPDATE scheduler.jobs SET status = ",
+        "(CASE WHEN status = '",
+        toString(JobStatus::Queued),
+        "' ",
+        "then '",
         toString(JobStatus::Cancelled),
         "' "
+        "else '",
+        toString(JobStatus::Cancelling),
+        "' end)::scheduler.job_status "
         "WHERE ",
         condition,
-        " RETURNING id;");
+        " RETURNING id, status;");
 
     try {
         auto txn = pool_.writableTransaction();
-        auto jobIds = pg::extractIds<JobId>(pg::execQuery(cancelJobsQuery, *txn));
-        INFO() << "Cancelled jobs: " << joinSeq(jobIds);
-        releaseVmResources(*txn, jobIds);
+        const auto result = pg::execQuery(cancelJobsQuery, *txn);
+        auto jobIds = pg::extractIds<JobId>(result);
+        INFO() << "Cancelled and cancelling jobs: " << joinSeq(jobIds);
+        std::vector<JobId> cancelledJobIds;
+        for (const auto& row: result) {
+            if (jobStatusFromString(row.at("status").as<std::string>()) ==
+                JobStatus::Cancelled) {
+                cancelledJobIds.push_back(row.at("id").as<JobId>());
+            }
+        }
+        INFO() << "Cancelled jobs: " << joinSeq(cancelledJobIds);
+        releaseVmResources(*txn, cancelledJobIds);
         txn->commit();
         return Result<void>::Success();
     } catch (const std::exception& ex) {
@@ -1162,12 +1178,9 @@ Result<void> PgTaskStorage::updateJobState(
             jobStatusFromString(statusResult[0].at("status").as<std::string>());
         if (jobStatus == JobStatus::Cancelling &&
             jobState.status != JobStatus::Cancelled) {
-            return Result<void>::Failure<JobCancelledException>(toString(
-                "Job with id '",
-                jobId,
-                "' assigned for VM with id '",
-                vmId,
-                "' was cancelled."));
+            INFO() << "Job with id '" << jobId << "' assigned for VM with id '"
+                   << vmId << "' was cancelled.";
+            return Result<void>::Success();
         }
 
         const auto& finalJobStatuses = getFinalJobStatuses();

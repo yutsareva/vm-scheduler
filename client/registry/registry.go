@@ -28,8 +28,8 @@ func CreateRegistry() *Registry {
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
-	//args := os.Args
-	grpcServerAddress := os.Getenv("VMS_AGENT_SCHEDULER_ADDRESS")
+
+	grpcServerAddress := os.Getenv("VMS_ADDRESS")
 	conn, err := grpc.Dial(grpcServerAddress, opts...)
 
 	if err != nil {
@@ -38,7 +38,7 @@ func CreateRegistry() *Registry {
 
 	cli, err := docker_client.NewEnvClient()
 	if err != nil {
-		log.Fatalf("Failed to create docker cliet: %v", err)
+		log.Fatalf("Failed to create docker client: %v", err)
 	}
 
 	return &Registry{

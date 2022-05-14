@@ -4,7 +4,6 @@
 #include "libs/postgres/include/pg_pool.h"
 
 #include <libs/task_storage/include/task_storage.h>
-#include <libs/scheduler/include/scheduler.h>
 #include <libs/common/include/errors.h>
 #include <libs/common/include/stringify.h>
 #include <libs/state/include/errors.h>
