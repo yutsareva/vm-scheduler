@@ -17,17 +17,21 @@ namespace vm_scheduler {
 
 namespace {
 
-void releaseVmResources(pqxx::transaction_base& txn, const std::vector<JobId>& jobIds)
+void releaseVmResources(
+    pqxx::transaction_base& txn,
+    const std::vector<JobId>& jobIds)
 {
     const auto updateVmIdleCapacity = toString(
-        "UPDATE scheduler.vms AS v "
-        "SET cpu_idle = LEAST(cpu_idle + j.cpu, v.cpu), "
-        "ram_idle = LEAST(ram_idle + j.ram, v.ram) "
-        "FROM scheduler.jobs AS j "
-        "WHERE v.id = j.vm_id "
-        "AND j.id IN (",
-        joinSeq(jobIds),
-        ");");
+        "UPDATE scheduler.vms "
+            "SET cpu_idle = LEAST(cpu_idle + freed_cpu, vms.cpu), "
+            "ram_idle = LEAST(ram_idle + freed_ram, vms.ram) "
+        "FROM ("
+            "SELECT jobs.vm_id, SUM(jobs.cpu) as freed_cpu, SUM(jobs.ram) as freed_ram "
+            "FROM scheduler.jobs "
+            "WHERE jobs.id IN (", JoinSeq(", ", jobIds), ") "
+            "GROUP BY jobs.vm_id) AS b "
+        "WHERE vms.id = b.vm_id;"
+    );
     pg::execQuery(updateVmIdleCapacity, txn);
 }
 
@@ -704,8 +708,10 @@ Result<void> PgTaskStorage::cancelJobs_(const std::string& condition)
                 cancelledJobIds.push_back(row.at("id").as<JobId>());
             }
         }
-        INFO() << "Cancelled jobs: " << joinSeq(cancelledJobIds);
-        releaseVmResources(*txn, cancelledJobIds);
+        INFO() << "Cancelled jobs: [" << joinSeq(cancelledJobIds) << "]";
+        if (!jobIds.empty()) {
+            releaseVmResources(*txn, cancelledJobIds);
+        }
         txn->commit();
         return Result<void>::Success();
     } catch (const std::exception& ex) {

@@ -38,7 +38,7 @@ std::ostream& operator<<(std::ostream& out, const StateChange& stateChange)
     out << "], VM capacities updates: [";
     for (const auto& [vmId, capacity] : stateChange.updatedIdleCapacities) {
         out << "{ id: " << vmId << ", "
-            << "new idle capacity: " << capacity << "}, ";
+            << "new idle capacity: " << capacity << " }, ";
     }
     out << "], VMs to terminate: [" << joinSeq(stateChange.vmsToTerminate);
     out << "]";

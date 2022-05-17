@@ -3,11 +3,16 @@
 #include "libs/scheduler/impl/complex_vm_assigner_config.h"
 #include "libs/scheduler/include/vm_assigner.h"
 
-#include <forward_list>
-#include <list>
+#include <set>
 #include <optional>
 
 namespace vm_scheduler {
+
+struct compareActiveVms {
+    bool operator()(const ActiveVm& lhs, const ActiveVm& rhs) const {
+        return lhs.idleCapacity < rhs.idleCapacity;
+    }
+};
 
 class JobAllocator {
 public:
@@ -52,7 +57,7 @@ public:
     std::vector<VmId> getIdleVms() override;
 
 private:
-    std::forward_list<ActiveVm> vms_;
+    std::multiset<ActiveVm, compareActiveVms> vms_;
     std::unordered_set<VmId> updatedVmIds_;
 };
 
@@ -65,7 +70,7 @@ public:
     std::vector<VmId> getIdleVms() override;
 
 private:
-    std::list<ActiveVm> vms_;
+    std::multiset<ActiveVm, compareActiveVms> vms_;
     std::unordered_set<VmId> updatedVmIds_;
 };
 

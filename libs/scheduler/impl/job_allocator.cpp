@@ -96,30 +96,22 @@ WorstFit::WorstFit(std::vector<ActiveVm> vms)
 
 std::optional<VmId> WorstFit::allocate(const QueuedJobInfo& job)
 {
-    auto prevIt = vms_.before_begin();
-    for (auto it = vms_.begin(); it != vms_.end(); ++it) {
-        if (job.requiredCapacity.fits(it->idleCapacity)) {
-            it->idleCapacity -= job.requiredCapacity;
-            auto activeVm = std::move(*it);
-            auto nextIt = vms_.erase_after(prevIt);
-
-            while (nextIt != vms_.end()) {
-                if (activeVm.idleCapacity >= nextIt->idleCapacity) {
-                    auto insertedIt =
-                        vms_.insert_after(prevIt, std::move(activeVm));
-                    updatedVmIds_.insert(insertedIt->id);
-                    return insertedIt->id;
-                }
-                ++prevIt;
-                ++nextIt;
-            }
-            auto insertedIt = vms_.insert_after(prevIt, std::move(activeVm));
-            updatedVmIds_.insert(insertedIt->id);
-            return insertedIt->id;
-        }
-        prevIt = it;
+    if (vms_.empty()) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    auto it = vms_.end();
+    --it;
+    if (vms_.empty() || !job.requiredCapacity.fits(it->idleCapacity)) {
+        return std::nullopt;
+    }
+    auto updatedActiveVm = *it;
+    updatedActiveVm.idleCapacity -= job.requiredCapacity;
+
+    vms_.erase(it);
+    updatedVmIds_.insert(updatedActiveVm.id);
+    const auto inserted = vms_.insert(std::move(updatedActiveVm));
+
+    return inserted->id;
 }
 
 VmIdToCapacity WorstFit::getVmsWithUpdatedCapacities()
@@ -149,30 +141,32 @@ BestFit::BestFit(std::vector<ActiveVm> vms)
     std::sort(vms.begin(), vms.end(), [](const ActiveVm& lhs, const ActiveVm& rhs) {
         return lhs.idleCapacity < rhs.idleCapacity;
     });
-    vms_ = {std::make_move_iterator(vms.begin()), std::make_move_iterator(vms.end())};
+    vms_ = {
+        std::make_move_iterator(vms.begin()), std::make_move_iterator(vms.end())};
 }
 
 std::optional<VmId> BestFit::allocate(const QueuedJobInfo& job)
 {
-    for (auto it = vms_.begin(); it != vms_.end(); ++it) {
-        if (job.requiredCapacity.fits(it->idleCapacity)) {
-            it->idleCapacity -= job.requiredCapacity;
-            auto activeVm = std::move(*it);
-            auto lastIt = vms_.erase(it);
+    // binary search using non-linear order via fits function
+    auto it = std::lower_bound(
+        vms_.begin(),
+        vms_.end(),
+        job.requiredCapacity,
+        [](const ActiveVm& vm, const SlotCapacity& slot) {
+            return !slot.fits(vm.idleCapacity);
+        });
 
-            for (auto curIt = vms_.begin(); curIt != lastIt; ++curIt) {
-                if (curIt->idleCapacity >= activeVm.idleCapacity) {
-                    auto insertedIt = vms_.insert(curIt, std::move(activeVm));
-                    updatedVmIds_.insert(insertedIt->id);
-                    return insertedIt->id;
-                }
-            }
-            auto insertedIt = vms_.insert(lastIt, std::move(activeVm));
-            updatedVmIds_.insert(insertedIt->id);
-            return insertedIt->id;
-        }
+    if (it == vms_.end() || !job.requiredCapacity.fits(it->idleCapacity)) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    auto updatedActiveVm = *it;
+    updatedActiveVm.idleCapacity -= job.requiredCapacity;
+
+    vms_.erase(it);
+    updatedVmIds_.insert(updatedActiveVm.id);
+    const auto inserted = vms_.insert(std::move(updatedActiveVm));
+
+    return inserted->id;
 }
 
 VmIdToCapacity BestFit::getVmsWithUpdatedCapacities()

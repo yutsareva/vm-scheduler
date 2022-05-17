@@ -3,6 +3,7 @@
 #include <libs/postgres/include/helpers.h>
 #include <libs/server/impl/test_utils.h>
 #include <libs/task_registry/include/task_registry.h>
+#include <libs/common/include/stringify.h>
 
 #include <gtest/gtest.h>
 
@@ -159,7 +160,7 @@ TEST(CancelJobs, timedOutJobs)
 
     const Config config = {
         .allocationInterval = 10s,
-        .scheduleInterval = 10s,
+        .scheduleInterval = 1s,
         .detectFailuresInterval = 1s,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();
@@ -175,6 +176,10 @@ TEST(CancelJobs, timedOutJobs)
                 .cpu = 1_cores,
                 .ram = 1024_MB,
             },
+            SlotCapacity{
+                .cpu = 4_cores,
+                .ram = 8192_MB,
+            },
         }));
 
     auto taskRegistry = std::make_unique<TaskRegistry>(
@@ -183,9 +188,37 @@ TEST(CancelJobs, timedOutJobs)
         std::move(cloudClientMock));
 
     auto protoTask = t::generateProtoTask();
-    protoTask.mutable_limits()->set_execution_s(1);
+    protoTask.mutable_limits()->set_execution_s(5);
 
     const auto protoTaskAdditionResult = t::addTask(protoTask);
+
+    std::this_thread::sleep_for(3s);
+
+    auto pool = createPool(postgres);
+    const auto getVms = toString(
+        "SELECT cpu, ram, cpu_idle, ram_idle, status FROM scheduler.vms;");
+    {
+        auto txn = pool.masterReadOnlyTransaction();
+        const auto vmsResult = pg::execQuery(getVms, *txn);
+
+        EXPECT_EQ(vmsResult.size(), 1u);
+        EXPECT_EQ(vmsResult[0].at("cpu").as<size_t>(), 4u);
+        EXPECT_EQ(vmsResult[0].at("cpu_idle").as<size_t>(), 0u);
+        EXPECT_EQ(vmsResult[0].at("ram").as<size_t>(), 8192u);
+        EXPECT_EQ(vmsResult[0].at("ram_idle").as<size_t>(), 6192u);
+    }
+
     const auto taskResult = t::waitTaskForComplete(protoTaskAdditionResult.task_id(), 30s);
     checkJobStatuses(taskResult, proto::JobStatus::JOB_CANCELLED);
+
+    {
+        auto txn = pool.masterReadOnlyTransaction();
+        const auto vmsResult = pg::execQuery(getVms, *txn);
+
+        EXPECT_EQ(vmsResult.size(), 1u);
+        EXPECT_EQ(vmsResult[0].at("cpu").as<size_t>(), 4u);
+        EXPECT_EQ(vmsResult[0].at("cpu_idle").as<size_t>(), 4u);
+        EXPECT_EQ(vmsResult[0].at("ram").as<size_t>(), 8192u);
+        EXPECT_EQ(vmsResult[0].at("ram_idle").as<size_t>(), 8192u);
+    }
 }

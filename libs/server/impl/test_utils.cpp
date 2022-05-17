@@ -9,11 +9,11 @@ using namespace std::chrono_literals;
 
 proto::Task generateProtoTask()
 {
-    proto::JobLimits job_limits;
-    job_limits.set_memory_mb(1);
-    job_limits.set_cpu_cores(2);
+    proto::JobLimits jobLimits;
+    jobLimits.set_memory_mb(1000);
+    jobLimits.set_cpu_cores(2);
     proto::TaskLimits limits;
-    *limits.mutable_job_limits() = std::move(job_limits);
+    *limits.mutable_job_limits() = std::move(jobLimits);
     limits.set_execution_s(60);
 
     proto::Task task;
