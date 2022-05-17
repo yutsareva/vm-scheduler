@@ -8,11 +8,12 @@
 
 namespace vm_scheduler {
 
-class DistributedLock : std::enable_shared_from_this<DistributedLock> {
+class DistributedLock : public std::enable_shared_from_this<DistributedLock> {
 public:
     DistributedLock(ZkConfig config);
     ~DistributedLock();
 
+    void start();
     void stop();
     void lock();
     std::optional<size_t> lockNumber();
@@ -21,6 +22,7 @@ private:
     void retryLock(std::future<zk::watch_exists_result>&& f);
     void retryCheckLockAcquired(std::future<zk::watch_exists_result>&& f);
     void checkLockAcquired();
+    size_t getZxid(const std::string& nodeName);
 
 private:
     zk::client zkClient_;

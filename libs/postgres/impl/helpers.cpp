@@ -8,7 +8,7 @@ namespace vm_scheduler::pg {
 
 pqxx::result execQuery(const std::string& sql, pqxx::transaction_base& w)
 {
-    INFO() << "SQL query execution: " << sql;
+//    INFO() << "SQL query execution: " << sql;
     try {
         return w.exec(sql);
     } catch (const std::exception& ex) {

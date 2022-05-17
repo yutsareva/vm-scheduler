@@ -2,6 +2,8 @@
 
 #include <libs/common/include/env.h>
 
+#include <iostream>
+
 namespace vm_scheduler {
 
 namespace {

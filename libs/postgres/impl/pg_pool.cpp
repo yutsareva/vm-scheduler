@@ -35,7 +35,7 @@ std::unique_ptr<pqxx::lazyconnection> PgPool::connection()
     while (connectionPool_.empty()) {
         poolNotEmpty_.wait(lock);
     }
-    DEBUG() << "PG pool size: " << connectionPool_.size();
+//    DEBUG() << "PG pool size: " << connectionPool_.size();
 
     auto conn = std::move(connectionPool_.front());
     connectionPool_.pop();

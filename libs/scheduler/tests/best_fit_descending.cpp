@@ -706,3 +706,112 @@ TEST(BFDVmAssigner, assignTest5)
 
     EXPECT_EQ(stateChange, expectedStateChange);
 }
+
+TEST(BFDVmAssigner, assignC6gTest1)
+{
+    const auto initialState = State{
+        .queuedJobs =
+            {
+                QueuedJobInfo{
+                    .id = 0,
+                    .requiredCapacity =
+                        SlotCapacity{
+                            .cpu = 9_cores,
+                            .ram = 400_MB,
+                        },
+                },
+                QueuedJobInfo{
+                    .id = 1,
+                    .requiredCapacity =
+                        SlotCapacity{
+                            .cpu = 9_cores,
+                            .ram = 400_MB,
+                        },
+                },
+                QueuedJobInfo{
+                    .id = 2,
+                    .requiredCapacity =
+                        SlotCapacity{
+                            .cpu = 9_cores,
+                            .ram = 400_MB,
+                        },
+                },
+                QueuedJobInfo{
+                    .id = 3,
+                    .requiredCapacity =
+                        SlotCapacity{
+                            .cpu = 9_cores,
+                            .ram = 400_MB,
+                        },
+                },
+            },
+        .vms = {},
+    };
+    const auto config = ComplexVmAssignerConfig{
+        .jobOrdering = JobOrdering::Descending,
+        .allocationStrategy = AllocationStrategy::BestFit,
+    };
+    const auto possibleSlots = t::getC6gPossibleSlots();
+    ComplexVmAssigner vmAssigner(config, initialState, possibleSlots);
+    const auto stateChange = vmAssigner.assign();
+
+    const auto expectedStateChange = StateChange{
+        .jobToVm =
+            {
+                {
+                    0,
+                    DesiredSlotId(0),
+                },
+                {
+                    1,
+                    DesiredSlotId(0),
+                },
+                {
+                    2,
+                    DesiredSlotId(0),
+                },
+                {
+                    3,
+                    DesiredSlotId(1),
+                },
+            },
+        .desiredSlotMap =
+            {
+                {
+                    DesiredSlotId(0),
+                    DesiredSlot{
+                        .total =
+                            SlotCapacity{
+                                .cpu = 32_cores,
+                                .ram = 65536_MB,
+                            },
+                        .idle =
+                            SlotCapacity{
+                                .cpu = 5_cores,
+                                .ram = 64336_MB,
+                            },
+                    },
+                },
+                {
+                    DesiredSlotId(1),
+                    DesiredSlot{
+                        .total =
+                            SlotCapacity{
+                                .cpu = 16_cores,
+                                .ram = 32768_MB,
+                            },
+                        .idle =
+                            SlotCapacity{
+                                .cpu = 7_cores,
+                                .ram = 32368_MB,
+                            },
+                    },
+                },
+            },
+        .updatedIdleCapacities = {},
+        .vmsToTerminate = {},
+    };
+
+    EXPECT_EQ(stateChange, expectedStateChange);
+    t::checkStateConstrains(initialState, stateChange);
+}

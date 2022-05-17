@@ -23,17 +23,44 @@ services:
       PG_USER: postgres
       PG_DB_NAME: postgres
       PG_POOL_SIZE: 10
-      AWS_EC2_ACCESS_KEY_ID: 123
-      AWS_EC2_SECRET_KEY: 456
+      AWS_EC2_ACCESS_KEY_ID: "***"
+      AWS_EC2_SECRET_KEY: "***"
+      VMS_AGENT_ECR_ACCESS_KEY_ID: "***"
+      VMS_AGENT_ECR_SECRET_KEY: "***"
+      VMS_ZK_ADDRESS: "zk://3.137.201.107:2181,3.131.159.162:2181,3.17.63.120:2181/"
+      VMS_USE_ZK_DIST_LOCK: 1
+      VMS_ADDRESS: server:50001
+# uncomment for testing leader election via zookeeper
+#  server1:
+#    build:
+#      context: ../
+#      dockerfile: ./docker/server.Dockerfile
+#    depends_on:
+#      - db
+#    ports:
+#      - 50002:50001
+#    environment:
+#      PG_HOSTS: db
+#      PG_PASSWORD: postgres
+#      PG_USER: postgres
+#      PG_DB_NAME: postgres
+#      PG_POOL_SIZE: 10
+#      AWS_EC2_ACCESS_KEY_ID: "***"
+#      AWS_EC2_SECRET_KEY: "***"
+#      VMS_AGENT_ECR_ACCESS_KEY_ID: "***"
+#      VMS_AGENT_ECR_SECRET_KEY: "***"
+#      VMS_ZK_ADDRESS: "zk://3.137.201.107:2181,3.131.159.162:2181,3.17.63.120:2181/"
+#      VMS_USE_ZK_DIST_LOCK: 1
+#      VMS_ADDRESS: server:50001
   agent:
     build:
       context: ../
       dockerfile: ./docker/agent.Dockerfile
     depends_on:
-      - scheduler
+      - server
     environment:
       VM_ID: 1
-      VMS_ADDRESS: scheduler:50001
+      VMS_ADDRESS: server:50001
 # Uncomment these lines to persist data on the local filesystem.
 #   environment:
 #     - PGDATA=/var/lib/postgresql/data/pgdata

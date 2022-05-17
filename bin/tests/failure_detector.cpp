@@ -39,9 +39,7 @@ void checkJobStatuses(const proto::TaskExecutionResult& taskResult, const proto:
 {
     EXPECT_EQ(taskResult.status(), proto::TaskStatus::TASK_COMPLETED);
     EXPECT_EQ(taskResult.job_results().size(), 2);
-    EXPECT_FALSE(taskResult.job_results()[0].has_result_url());
     EXPECT_EQ(taskResult.job_results()[0].status(), status);
-    EXPECT_FALSE(taskResult.job_results()[1].has_result_url());
     EXPECT_EQ(taskResult.job_results()[1].status(), status);
 }
 
@@ -55,6 +53,8 @@ TEST(fail_tasks, non_working_allocator)
         .allocationInterval = 1s,
         .scheduleInterval = 1s,
         .detectFailuresInterval = 1s,
+        .mode = SchedulerMode::FullScheduler,
+        .useZkDistLock = false,
     };
     auto cloudClientMock = std::make_unique<t::CloudClientMock>();
     EXPECT_CALL(*cloudClientMock, allocate(_, _))
@@ -194,11 +194,11 @@ TEST(CancelJobs, timedOutJobs)
 
     std::this_thread::sleep_for(3s);
 
-    auto pool = createPool(postgres);
+    auto pool = pg::createPool();
     const auto getVms = toString(
         "SELECT cpu, ram, cpu_idle, ram_idle, status FROM scheduler.vms;");
     {
-        auto txn = pool.masterReadOnlyTransaction();
+        auto txn = pool.readOnlyTransaction();
         const auto vmsResult = pg::execQuery(getVms, *txn);
 
         EXPECT_EQ(vmsResult.size(), 1u);
@@ -212,7 +212,7 @@ TEST(CancelJobs, timedOutJobs)
     checkJobStatuses(taskResult, proto::JobStatus::JOB_CANCELLED);
 
     {
-        auto txn = pool.masterReadOnlyTransaction();
+        auto txn = pool.readOnlyTransaction();
         const auto vmsResult = pg::execQuery(getVms, *txn);
 
         EXPECT_EQ(vmsResult.size(), 1u);

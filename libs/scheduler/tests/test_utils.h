@@ -8,6 +8,7 @@
 namespace vm_scheduler::testing {
 
 std::vector<SlotCapacity> getPossibleSlots();
+std::vector<SlotCapacity> getC6gPossibleSlots();
 
 void checkStateConstrains(const State& state, const StateChange& stateChange);
 

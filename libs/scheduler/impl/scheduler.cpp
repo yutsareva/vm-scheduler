@@ -25,6 +25,9 @@ Scheduler::Scheduler(
     if (!std::is_sorted(possibleSlots_.begin(), possibleSlots_.end())) {
         throw RuntimeException("Possible slots array is not sorted");
     }
+    if (distLock_ != nullptr) {
+        distLock_->start();
+    }
 }
 
 void Scheduler::schedule() noexcept

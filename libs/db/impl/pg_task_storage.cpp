@@ -19,6 +19,9 @@ namespace {
 
 void releaseVmResources(pqxx::transaction_base& txn, const std::vector<JobId>& jobIds)
 {
+    if (jobIds.empty()) {
+        return;
+    }
     const auto updateVmIdleCapacity = toString(
         "UPDATE scheduler.vms "
         "SET cpu_idle = LEAST(cpu_idle + freed_cpu, vms.cpu), "
@@ -416,7 +419,7 @@ Result<void> PgTaskStorage::checkLeader_(
             if (lockNumber > maxId) {
                 INFO() << "Inserting new lock number: " << lockNumber;
                 const auto insertNewLockNumberQuery = toString(
-                    "INSERT INTO scheduler.locks (max_id) VALUES (",
+                    "INSERT INTO scheduler.locks (id) VALUES (",
                     lockNumber,
                     ");");
                 pg::execQuery(insertNewLockNumberQuery, txn);

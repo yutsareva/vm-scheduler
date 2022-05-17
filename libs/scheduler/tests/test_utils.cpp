@@ -37,6 +37,44 @@ std::vector<SlotCapacity> getPossibleSlots()
     };
 }
 
+std::vector<SlotCapacity> getC6gPossibleSlots()
+{
+    return {
+        {
+            .cpu = 1_cores,
+            .ram = 2048_MB,
+        },
+        {
+            .cpu = 2_cores,
+            .ram = 4096_MB,
+        },
+        {
+            .cpu = 4_cores,
+            .ram = 8192_MB,
+        },
+        {
+            .cpu = 8_cores,
+            .ram = 16384_MB,
+        },
+        {
+            .cpu = 16_cores,
+            .ram = 32768_MB,
+        },
+        {
+            .cpu = 32_cores,
+            .ram = 65536_MB,
+        },
+        {
+            .cpu = 48_cores,
+            .ram = 98304_MB,
+        },
+        {
+            .cpu = 64_cores,
+            .ram = 131072_MB,
+        },
+    };
+}
+
 void checkStateConstrains(const State& state, const StateChange& stateChange)
 {
     SlotCapacity queuedJobsCapacity = {

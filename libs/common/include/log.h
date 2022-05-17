@@ -4,6 +4,6 @@
 
 #include <iostream>
 
-#define INFO() std::cerr << "\n[" << vm_scheduler::getCurrentTime() << "] "
-#define DEBUG() std::cerr << "\n[" << vm_scheduler::getCurrentTime() << "] "
-#define ERROR() std::cerr << "\n[" << vm_scheduler::getCurrentTime() << "] "
+#define INFO() std::cerr << std::endl << "[" << vm_scheduler::getCurrentTime() << "] "
+#define DEBUG() std::cerr << std::endl << "[" << vm_scheduler::getCurrentTime() << "] "
+#define ERROR() std::cerr << std::endl << "[" << vm_scheduler::getCurrentTime() << "] "
