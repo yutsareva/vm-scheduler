@@ -151,7 +151,8 @@ Aws::EC2::Model::RunInstancesRequest createRunRequest(
     const std::string& vmToken,
     const AwsInstancesConfig& config,
     const Aws::EC2::Model::InstanceType& vmType,
-    const VmId vmId)
+    const VmId vmId,
+    const bool useSpot)
 {
     Aws::EC2::Model::TagSpecification tagSpecs;
     tagSpecs = tagSpecs.WithResourceType(Aws::EC2::Model::ResourceType::instance);
@@ -181,6 +182,15 @@ Aws::EC2::Model::RunInstancesRequest createRunRequest(
         .WithMinCount(1)
         .WithMaxCount(1);
 
+    if (useSpot) {
+        Aws::EC2::Model::InstanceMarketOptionsRequest marketOptions;
+        marketOptions
+            .WithMarketType(Aws::EC2::Model::MarketType::spot);
+        // The default spot price is the On-Demand price.
+
+        request.WithInstanceMarketOptions(marketOptions);
+    }
+
     return request;
 }
 
@@ -191,7 +201,7 @@ Result<AwsVmInfo> AwsCloudClient::createInstance(
     const Aws::EC2::Model::InstanceType& vmType,
     const VmId vmId) noexcept
 {
-    const auto runRequest = createRunRequest(vmToken, vmConfig_, vmType, vmId);
+    const auto runRequest = createRunRequest(vmToken, vmConfig_, vmType, vmId, vmConfig_.useSpot);
 
     const auto vmTypeName =
         Aws::EC2::Model::InstanceTypeMapper::GetNameForInstanceType(

@@ -14,6 +14,7 @@ const std::string DEFAULT_AWS_INSTANCE_CLASS = "c6g.";
 const std::string DEFAULT_AWS_INSTANCE_TAGS = "owner:vms-test";
 const std::string DEFAULT_AWS_VM_TOKEN_PREFIX = "vms-prod";
 const std::string DEFAULT_AGENT_DOCKER_IMAGE_VERSION = "latest";
+constexpr size_t DEFAULT_USE_SPOT = 0;
 
 std::unordered_map<std::string, std::string> getVmTags()
 {
@@ -74,6 +75,7 @@ AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client)
                 .accessKeyId = getFromEnvOrThrow("VMS_AGENT_ECR_ACCESS_KEY_ID"),
                 .secretKey = getFromEnvOrThrow("VMS_AGENT_ECR_SECRET_KEY"),
             },
+        .useSpot = bool(getFromEnvOrDefault("VMS_USE_SPOT", DEFAULT_USE_SPOT)),
     };
 }
 

@@ -46,6 +46,7 @@ struct AwsInstancesConfig {
     std::string agentDockerImageVersion;
     std::string vmsAddress;
     AgentEcrCredentials creds;
+    bool useSpot;
 };
 
 AwsInstancesConfig createAwsInstancesConfig(Aws::EC2::EC2Client& client);
