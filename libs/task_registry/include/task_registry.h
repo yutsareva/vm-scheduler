@@ -9,7 +9,6 @@
 #include <libs/scheduler/include/scheduler.h>
 #include <libs/server/include/grpc_server.h>
 #include <libs/task_storage/include/task_storage.h>
-#include <libs/zookeeper//include/dist_lock.h>
 
 #include <memory>
 #include <string>
@@ -31,7 +30,6 @@ private:
     Allocator allocator_;
     FailureDetector failureDetector_;
     GrpcServer grpcServer_;
-    std::shared_ptr<DistributedLock> distLock_;
 
     std::unique_ptr<BackgroundThread> allocationThread_;
     std::unique_ptr<BackgroundThread> terminationThread_;

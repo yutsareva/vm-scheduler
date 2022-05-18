@@ -24,6 +24,9 @@ class WorstFit
 class NextFit
 class FirstFit
 
+class DistributedLock
+Scheduler *-- DistributedLock
+
 Scheduler *-- VmAssigner
 TaskStorage <.. Scheduler
 VmAssigner <|.. SimpleVmAssigner
