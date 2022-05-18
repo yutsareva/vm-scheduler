@@ -34,14 +34,21 @@ VmStatus vmStatusFromString(const std::string& s)
     return map.at(s);
 }
 
-const std::vector<VmStatus>& getActiveVmStatuses()
+template<>
+VmStatus fromString(const std::string& s)
 {
-    static const std::vector<VmStatus> activeVmStatuses =  {
+    return vmStatusFromString(s);
+}
+
+const std::unordered_set<VmStatus>& getActiveVmStatuses()
+{
+    static const std::unordered_set<VmStatus> finalVmStatuses = {
         VmStatus::PendingAllocation,
         VmStatus::Allocating,
         VmStatus::Allocated,
+        VmStatus::AgentStarted,
     };
-    return activeVmStatuses;
+    return finalVmStatuses;
 }
 
 std::ostream& operator<<(

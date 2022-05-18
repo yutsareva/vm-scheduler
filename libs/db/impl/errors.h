@@ -19,5 +19,8 @@ class InconsistentPgResultException : public RuntimeException {
 class SchedulingCancelled : public RuntimeException {
     using RuntimeException::RuntimeException;
 };
+class OptimisticLockingFailure : public RuntimeException {
+    using RuntimeException::RuntimeException;
+};
 
 } // namespace vm_scheduler

@@ -26,7 +26,14 @@ enum class JobStatus {
 };
 
 const char* toString(JobStatus v);
+
 JobStatus jobStatusFromString(const std::string& s);
+
+template<typename Status>
+Status fromString(const std::string& s);
+
+template<>
+JobStatus fromString(const std::string& s);
 
 const std::unordered_set<JobStatus>& getFinalJobStatuses();
 

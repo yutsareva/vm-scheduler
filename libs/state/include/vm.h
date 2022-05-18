@@ -60,7 +60,14 @@ enum class VmStatus {
 };
 
 const char* toString(VmStatus v);
+
 VmStatus vmStatusFromString(const std::string& s);
+
+template<typename Status>
+Status fromString(const std::string& s);
+
+template<>
+VmStatus fromString(const std::string& s);
 
 struct ActiveVm { // status: pending_allocation or allocated
     VmId id;
@@ -72,6 +79,6 @@ struct ActiveVm { // status: pending_allocation or allocated
 
 std::ostream& operator<<(std::ostream& out, const std::vector<ActiveVm>& activeVms);
 
-const std::vector<VmStatus>& getActiveVmStatuses();
+const std::unordered_set<VmStatus>&  getActiveVmStatuses();
 
 } // namespace vm_scheduler

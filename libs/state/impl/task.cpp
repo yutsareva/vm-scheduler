@@ -34,10 +34,17 @@ JobStatus jobStatusFromString(const std::string& s)
     return map.at(s);
 }
 
+template<>
+JobStatus fromString(const std::string& s)
+{
+    return jobStatusFromString(s);
+}
+
 const std::unordered_set<JobStatus>& getFinalJobStatuses()
 {
     static const std::unordered_set<JobStatus> finalJobStatuses = {
         JobStatus::Completed,
+        JobStatus::Cancelling, // not actually final
         JobStatus::Cancelled,
         JobStatus::Error,
         JobStatus::InternalError,

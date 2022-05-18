@@ -105,6 +105,9 @@ private:
     Result<void> checkLeader_(
         pqxx::transaction_base& txn, const size_t lockNumber) noexcept;
     Result<void> cancelJobs_(const std::string& condition);
+    Result<void> checkConflicts_(
+        pqxx::transaction_base& txn,
+        const StateChange& state);
 
 private:
     pg::PgPool pool_;

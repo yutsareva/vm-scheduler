@@ -17,22 +17,71 @@ namespace vm_scheduler {
 
 namespace {
 
-void releaseVmResources(
-    pqxx::transaction_base& txn,
-    const std::vector<JobId>& jobIds)
+void releaseVmResources(pqxx::transaction_base& txn, const std::vector<JobId>& jobIds)
 {
     const auto updateVmIdleCapacity = toString(
         "UPDATE scheduler.vms "
-            "SET cpu_idle = LEAST(cpu_idle + freed_cpu, vms.cpu), "
-            "ram_idle = LEAST(ram_idle + freed_ram, vms.ram) "
+        "SET cpu_idle = LEAST(cpu_idle + freed_cpu, vms.cpu), "
+        "ram_idle = LEAST(ram_idle + freed_ram, vms.ram) "
         "FROM ("
-            "SELECT jobs.vm_id, SUM(jobs.cpu) as freed_cpu, SUM(jobs.ram) as freed_ram "
-            "FROM scheduler.jobs "
-            "WHERE jobs.id IN (", JoinSeq(", ", jobIds), ") "
-            "GROUP BY jobs.vm_id) AS b "
-        "WHERE vms.id = b.vm_id;"
-    );
+        "SELECT jobs.vm_id, SUM(jobs.cpu) as freed_cpu, SUM(jobs.ram) as freed_ram "
+        "FROM scheduler.jobs "
+        "WHERE jobs.id IN (",
+        joinSeq(jobIds),
+        ") "
+        "GROUP BY jobs.vm_id) AS b "
+        "WHERE vms.id = b.vm_id;");
     pg::execQuery(updateVmIdleCapacity, txn);
+}
+
+template<typename Id, typename Status>
+std::unordered_map<Id, Status> getStatusesWithLock(
+    pqxx::transaction_base& txn,
+    const std::vector<Id>& ids,
+    const std::string& tableName)
+{
+    if (ids.empty()) {
+        return {};
+    }
+
+    const auto statusesQuery = toString(
+        "SELECT id, status FROM scheduler.",
+        tableName,
+        " "
+        "WHERE id IN (",
+        joinSeq(ids),
+        ") "
+        "FOR UPDATE;");
+    const auto result = pg::execQuery(statusesQuery, txn);
+
+    std::unordered_map<JobId, Status> statuses;
+    for (const auto& row: result) {
+        statuses[row.at("id").template as<Id>()] =
+            fromString<Status>(row.at("status").template as<std::string>());
+    }
+    return statuses;
+}
+
+std::unordered_map<JobId, JobStatus> getJobStatusesWithLock(
+    pqxx::transaction_base& txn, const JobToVm& jobToVm)
+{
+    std::vector<JobId> jobIds;
+    for (const auto& [jobId, _]: jobToVm) {
+        jobIds.push_back(jobId);
+    }
+
+    return getStatusesWithLock<JobId, JobStatus>(txn, jobIds, "jobs");
+}
+
+std::unordered_map<VmId, VmStatus> getVmStatusesWithLock(
+    pqxx::transaction_base& txn, const VmIdToCapacity& updatedIdleCapacities)
+{
+    std::vector<VmId> vmIds;
+    for (const auto& [vmId, _]: updatedIdleCapacities) {
+        vmIds.push_back(vmId);
+    }
+
+    return getStatusesWithLock<VmId, VmStatus>(txn, vmIds, "vms");
 }
 
 } // anonymous namespace
@@ -194,6 +243,44 @@ Result<State> PgTaskStorage::getCurrentState() noexcept
     }};
 }
 
+Result<void> PgTaskStorage::checkConflicts_(
+    pqxx::transaction_base& txn, const StateChange& state)
+{
+    try {
+        const auto jobStatuses = getJobStatusesWithLock(txn, state.jobToVm);
+        const auto vmStatuses =
+            getVmStatusesWithLock(txn, state.updatedIdleCapacities);
+
+        const auto& finalJobStatuses = getFinalJobStatuses();
+        for (const auto [id, status]: jobStatuses) {
+            if (finalJobStatuses.contains(status)) {
+                return Result<void>::Failure<OptimisticLockingFailure>(toString(
+                    "Optimistic locking conflict: job ",
+                    id,
+                    " is in status ",
+                    toString(status)));
+            }
+        }
+
+        const auto& activeVmStatuses = getActiveVmStatuses();
+        for (const auto [id, status]: vmStatuses) {
+            if (!activeVmStatuses.contains(status)) {
+                return Result<void>::Failure<OptimisticLockingFailure>(toString(
+                    "Optimistic locking conflict: vm ",
+                    id,
+                    " is in status ",
+                    toString(status)));
+            }
+        }
+    } catch (const std::exception& ex) {
+        return Result<void>::Failure<PgException>(toString(
+            "Unexpected exception while checking conflicts before plan commit: ",
+            ex.what()));
+    }
+
+    return Result<void>::Success();
+}
+
 Result<void> PgTaskStorage::commitPlanChange(
     const StateChange& state, const PlanId planId) noexcept
 {
@@ -213,25 +300,30 @@ Result<void> PgTaskStorage::commitPlanChange(
             "Current scheduling is not the newest one");
     }
 
-    const auto terminateResult = terminateVms_(txn, state.vmsToTerminate);
+    auto conflictsCheckResult = checkConflicts_(txn, state);
+    if (conflictsCheckResult.IsFailure()) {
+        return conflictsCheckResult;
+    }
+
+    auto terminateResult = terminateVms_(txn, state.vmsToTerminate);
     if (terminateResult.IsFailure()) {
-        return Result<void>::Failure(terminateResult.ErrorRefOrThrow());
+        return Result<void>::Failure(std::move(terminateResult).ErrorOrThrow());
     }
 
-    const auto vmUpdates = updateVmCapacities_(txn, state.updatedIdleCapacities);
+    auto vmUpdates = updateVmCapacities_(txn, state.updatedIdleCapacities);
     if (vmUpdates.IsFailure()) {
-        return Result<void>::Failure(vmUpdates.ErrorRefOrThrow());
+        return Result<void>::Failure(std::move(vmUpdates).ErrorOrThrow());
     }
 
-    const auto allocatedVms = allocateNewVms_(txn, state.desiredSlotMap);
+    auto allocatedVms = allocateNewVms_(txn, state.desiredSlotMap);
     if (allocatedVms.IsFailure()) {
-        return Result<void>::Failure(allocatedVms.ErrorRefOrThrow());
+        return Result<void>::Failure(std::move(allocatedVms).ErrorOrThrow());
     }
 
-    const auto assignmentsResult =
+    auto assignmentsResult =
         applyJobVmAssignments_(txn, state.jobToVm, allocatedVms.ValueRefOrThrow());
     if (assignmentsResult.IsFailure()) {
-        return Result<void>::Failure(assignmentsResult.ErrorRefOrThrow());
+        return Result<void>::Failure(std::move(assignmentsResult).ErrorOrThrow());
     }
 
     const auto activityRefreshResult = refreshPlanActivityTs_(txn, planId);
