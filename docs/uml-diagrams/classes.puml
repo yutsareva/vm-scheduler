@@ -47,11 +47,11 @@ Allocator <.. FailureDetector
 TaskStorage <.. FailureDetector
 
 class GrpcServer
-class AgentApiSchedulerService
-class PublicApiSchedulerService
+class AgentApi
+class PublicApi
 TaskStorage <.. GrpcServer
-GrpcServer *-- AgentApiSchedulerService
-GrpcServer *-- PublicApiSchedulerService
+GrpcServer *-- AgentApi
+GrpcServer *-- PublicApi
 
 class TaskRegistry
 TaskRegistry o-- Allocator
