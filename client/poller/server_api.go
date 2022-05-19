@@ -2,19 +2,20 @@ package poller
 
 import (
 	"context"
-	"google.golang.org/grpc/grpclog"
+	"log"
 	agent_api "scheduler/registry"
 	pb_api "scheduler/services"
 	pb "scheduler/structures"
 )
 
 func getAssignments(vmId uint64, client pb_api.AgentApiSchedulerClient) *JobAssignments {
+	log.Print("Getting assignments...")
 	protoVmId := &pb.VmId{
 		Value: &vmId,
 	}
 	response, err := client.GetAssignedJobs(context.Background(), protoVmId)
 	if err != nil {
-		grpclog.Fatalf("fail to dial: %v", err)
+		log.Printf("fail to dial: %v", err)
 		return &JobAssignments{}
 	}
 	var assignedJobIds []agent_api.JobId
@@ -26,6 +27,7 @@ func getAssignments(vmId uint64, client pb_api.AgentApiSchedulerClient) *JobAssi
 			assignedJobIds = append(assignedJobIds, agent_api.JobId(*job.Id.Value))
 		}
 	}
+	log.Printf("Got assignments: assigned %v, cancelled: %v", assignedJobIds, cancelledJobIds)
 	return &JobAssignments{
 		assignedJobIds,
 		cancelledJobIds,
@@ -33,6 +35,7 @@ func getAssignments(vmId uint64, client pb_api.AgentApiSchedulerClient) *JobAssi
 }
 
 func getAssignedJobInfo(client pb_api.AgentApiSchedulerClient, vmId uint64, jobId uint64) *agent_api.JobInfo {
+	log.Print("Getting assigned job info...")
 	protoLaunchRequest := &pb.LaunchRequest{
 		VmId: &pb.VmId{
 			Value: &vmId,
@@ -43,10 +46,10 @@ func getAssignedJobInfo(client pb_api.AgentApiSchedulerClient, vmId uint64, jobI
 	}
 	response, err := client.GetJobToLaunch(context.Background(), protoLaunchRequest)
 	if err != nil {
-		grpclog.Fatalf("fail to dial: %v", err)
+		log.Printf("fail to dial: %v", err)
 		return nil
 	}
-	return &agent_api.JobInfo{
+	jobInfo := agent_api.JobInfo{
 		ImageVersion: *response.ImageVersion,
 		Limits: agent_api.JobLimits{
 			Cpu: *response.JobLimits.CpuCores,
@@ -55,4 +58,6 @@ func getAssignedJobInfo(client pb_api.AgentApiSchedulerClient, vmId uint64, jobI
 		TaskSettings: *response.TaskSettings,
 		JobOptions:   *response.JobOptions,
 	}
+	log.Printf("Got assigned job info: %+v", jobInfo)
+	return &jobInfo
 }

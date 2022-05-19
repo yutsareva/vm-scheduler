@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/client"
 	"io"
 	"os"
+	"scheduler/registry"
+
 	//"github.com/docker/go-connections/nat"
 )
 
@@ -20,9 +22,9 @@ func PullImage(ctx context.Context, cli *client.Client, image *string) error {
 	return nil
 }
 
-func CreateContainer(ctx context.Context, cli *client.Client, jobName *string, imageVersion *string) (*string, error) {
+func CreateContainer(ctx context.Context, cli *client.Client, jobName *string, jobInfo *registry.JobInfo) (*string, error) {
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: *imageVersion,
+		Image: jobInfo.ImageVersion,
 		//Volumes: map[string]struct{}{jobName{}},
 		Cmd: []string{
 			"--setting", "/task/settings.json",
@@ -37,6 +39,10 @@ func CreateContainer(ctx context.Context, cli *client.Client, jobName *string, i
 					Source: "/" + *jobName,
 					Target: "/task",
 				},
+			},
+			Resources: container.Resources{
+				Memory: int64(jobInfo.Limits.Ram) * 1024 * 1024,
+				NanoCPUs: int64(jobInfo.Limits.Cpu) * 10e9,
 			},
 		}, nil, nil, *jobName)
 	if err != nil {

@@ -20,3 +20,6 @@ docker-compose down --volumes && docker-compose up --build db
 - run tests
   - build docker "Docker for building the project in Clion IDE"
   - run gtests from bin/tests folder
+
+## Test task docker image
+https://hub.docker.com/repository/docker/dockertsareva/stub-vms-task

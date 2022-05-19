@@ -29,7 +29,7 @@ func CreateRegistry() *Registry {
 		grpc.WithInsecure(),
 	}
 
-	grpcServerAddress := os.Getenv("VMS_ADDRESS")
+	grpcServerAddress := os.Getenv("VMS_AGENT_SERVER_ADDRESS")
 	conn, err := grpc.Dial(grpcServerAddress, opts...)
 
 	if err != nil {

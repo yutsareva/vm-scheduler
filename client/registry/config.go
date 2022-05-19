@@ -14,7 +14,7 @@ type Config struct {
 }
 
 func getConfig() Config {
-	vmId, err := strconv.ParseUint(os.Getenv("VM_ID"), 10, 64)
+	vmId, err := strconv.ParseUint(os.Getenv("VMS_AGENT_VM_ID"), 10, 64)
 	if err != nil {
 		log.Fatalf("Invalid vm id: %v", err)
 	}

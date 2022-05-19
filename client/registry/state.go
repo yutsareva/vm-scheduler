@@ -34,7 +34,6 @@ type State struct {
 	readyToRunJobs map[JobId]void
 	cancelledJobs  map[JobId]void
 	runningJobs    map[JobId]void
-	completedJobs  map[JobId]JobResult
 
 	jobIdToInfo map[JobId]*JobInfo
 }
@@ -113,18 +112,10 @@ func (s *State) ReturnFailedToLaunchJob(jobId JobId) {
 	delete(s.runningJobs, jobId)
 }
 
-func (s *State) completeJob(jobId JobId, jobResult JobResult) {
+func (s *State) CompleteJob(jobId uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	delete(s.runningJobs, jobId)
-	s.completedJobs[jobId] = jobResult
-}
-
-func (s *State) removeJob(jobId JobId) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	delete(s.completedJobs, jobId)
-	delete(s.jobIdToInfo, jobId)
+	delete(s.runningJobs, JobId(jobId))
+	delete(s.jobIdToInfo, JobId(jobId))
 }

@@ -28,9 +28,9 @@ services:
       VMS_AGENT_ECR_ACCESS_KEY_ID: "***"
       VMS_AGENT_ECR_SECRET_KEY: "***"
       VMS_ZK_ADDRESS: "zk://3.137.201.107:2181,3.131.159.162:2181,3.17.63.120:2181/"
-      VMS_USE_ZK_DIST_LOCK: 1
+#      VMS_USE_ZK_DIST_LOCK: 1
       VMS_ADDRESS: server:50001
-# uncomment for testing leader election via zookeeper
+# Uncomment to test leader election via zookeeper
 #  server1:
 #    build:
 #      context: ../
@@ -59,8 +59,12 @@ services:
     depends_on:
       - server
     environment:
-      VM_ID: 1
-      VMS_ADDRESS: server:50001
+      VMS_AGENT_SERVER_ADDRESS: server:50001
+      VMS_AGENT_VM_ID: 1
+      VMS_AGENT_AWS_ACCESS_KEY_ID: "***"
+      VMS_AGENT_AWS_SECRET_ACCESS_KEY: "***"
+      VMS_AGENT_AWS_REGION: "us-east-2"
+      VMS_AGENT_AWS_BUCKET: "vms-job-results"
 # Uncomment these lines to persist data on the local filesystem.
 #   environment:
 #     - PGDATA=/var/lib/postgresql/data/pgdata
