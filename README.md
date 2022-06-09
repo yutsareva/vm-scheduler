@@ -1,222 +1,23 @@
 # Virtual machine scheduler (VMS)
 
-#### Public VM Scheduler gRPC API
+The scheduler runs tasks on a dynamic pool of resources.
+The task consists of several jobs.
+Every job is a computational task.
 
-- Add task to the Scheduler:
-```bash
-grpcurl -d \
-'{
-  "limits": {
-    "job_limits": {
-      "memory_mb": 2,
-      "cpu_cores": 1
-    },
-    "execution_s": 5
-  },
-  "settings": "{\"a\":\"b\"}",
-  "job_count": 2,
-  "image_version":"img version",
-  "client_id":"yutsareva",
-  "job_options":["{}","[]"]
-}' \
--plaintext -import-path <path> -\
-proto public_api.proto <VM Scheduler address> \
-vm_scheduler.proto.PublicApiScheduler/addTask
+The task is defined by the docker image and parameters to run.
+Each job also has its own parameters, which are passed to the container as arguments at startup, while the docker image is the same for all jobs of the task.
+All jobs have the same resource requirements.
 
-{
-  "taskId": {
-    "value": "4"
-  }
-}
-```
-- Get job statuses for the task_id
-```bash
-grpcurl -d '{"value":1}' -plaintext -import-path <path> \
--proto scheduler.proto <VM Acheduler address> \
-vm_scheduler.proto.PublicApiScheduler/getTaskResult
+The scheduler runs tasks on virtual machines that it allocates in the AWS cloud provider.
+An agent is launched on the allocated machines.
+The agent runs jobs in docker containers and communicates with the scheduler (to receive assigned tasks, send statuses of running tasks, heartbeats).
 
-{
-  "status": "TASK_QUEUED",
-  "jobResults": [
-    {
-      "status": "JOB_QUEUED"
-    },
-    {
-      "status": "JOB_QUEUED"
-    }
-  ]
-}
-```
-- Get job statuses with results. Contains field "result_url" with URL to result in S3 if the job was successfully completed.
-```bash
-grpcurl -d '{"value":1}' -plaintext -import-path <path> \
--proto scheduler.proto <VM Scheduler address> \
-vm_scheduler.proto.PublicApiScheduler/getTaskState
+## API
 
-{
-  "status": "TASK_QUEUED",
-  "jobStates": [
-    {
-      "status": "JOB_RUNNING"
-    },
-    {
-      "status": "JOB_COMPLETED",
-      "result_utl": "url to result on s3"
-    }
-  ]
-}
-```
+The scheduler provides gRPC API for users and agents.
 
-#### API for the agent
-
-- Get assigned jobs
-```bash
-grpcurl -d '{"value": 18}' -plaintext -import-path <path> \
--proto agent_api.proto <VM Scheduler address> \
-vm_scheduler.proto.AgentApiScheduler/getAssignedJobs
-
-{
-  "jobs": [
-    {
-      "id": {
-        "value": "6"
-      },
-      "status": "JOB_QUEUED"
-    }
-  ]
-}
-```
-- Get job data
-```bash
-grpcurl -d '{"vm_id": {"value": 18}, "job_id": {"value": 6}}' -plaintext -import-path <path> \
--proto agent_api.proto <VM Scheduler address> \
-vm_scheduler.proto.AgentApiScheduler/getJobToLaunch
-
-{
-  "id": {
-    "value": "6"
-  },
-  "imageVersion": "img version",
-  "jobLimits": {
-    "memoryMb": 2,
-    "cpuCores": 1
-  },
-  "taskSettings": "{\"a\": \"b\"}",
-  "jobOptions": "[]"
-}
-```
-- Update job status
-```bash
-grpcurl -d \
-'{
-  "vm_id": {"value": 18},
-  "job_id": {"value": 6},
-  "job_result": {
-    "status": "JOB_RUNNING"
-  }
-}' \
--plaintext -import-path <path> -proto agent_api.proto <VM Scheduler address> \
-vm_scheduler.proto.AgentApiScheduler/updateJobState
-
-{
-}
-```
-
-
-[comment]: <> (Classes diagram:)
-
-[comment]: <> (![alternative text]&#40;http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/classes.puml&#41;)
-
-[comment]: <> (Sequence diagram:)
-
-[comment]: <> (![alternative text]&#40;http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/workflow.puml&#41;)
-
-[comment]: <> (Job state diagram:)
-
-[comment]: <> (![alternative text]&#40;http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/job_state.puml&#41;)
-
-[comment]: <> (VM state diagram:)
-
-[comment]: <> (![alternative text]&#40;http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/vm_state.puml&#41;)
-
-[comment]: <> (DB schema:)
-
-[comment]: <> (![alternative text]&#40;http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/yutsareva/vm-scheduler/main/docs/uml-diagrams/db_schema.puml&#41;)
-
-<!---
-## Scenario (TBD refine)
-
-- Initialize VMS with AWS/Azure credentials to allocate VMs from his Amazon/Azure accounts.
-- Specify restrictions on VM / cpu allocated count.
-- Register several `tasks` -- docker images to launch.
-- Specify VM-spaces: sets of VMs are destined to launch specific tasks.
-- Specify strategies to launch VMs (use on-demand/spot instances, always keep some idle VMs to reduce
-  VM allocation and initialization time etc)
-- `Tasks` are provided by client docker images that are parametrazed with some input data. `Tasks` can generate some output data
-  (logs / task result) that should be saved to some persistent storage for some finite time.
+Examples: [api.md](docs/api.md)
 
 ## Architecture
-<img src="./docs/scheduler-schema.drawio.svg?raw=true" width="800">
 
-### Sequence diagram
-<img src="./docs/vm_scheduler_seq_v3.drawio.svg?raw=true" width="800">
-
-## Entities (TBD refine)
-
-### Tasks & VMs Storage
-- Stores status of tasks
-- Stores data about allocated and terminated VMs
-- Assumed to have two implementations:
-  - Postgres with Optimistic Concurrent Locking model
-  - Postgres for storing finished tasks and Zookeeper for storing current plan
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/task_storage
-
-### Output/input storage
-- Stores tasks' inputs/outputs
-
-### Core Scheduler
-- Gets info about all tasks for the client (required cpu, memory, job count), allocated VMs
-  and finds an appropriate VM or decides to allocate a new one to launch the task.
-- VM Assigner is a part of core scheduler
-  - Implements an algorithm to choose VMs for tasks
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/scheduler
-
-### Allocator
-- Allocates new VMs
-- Terminates idle VMs
-- Cloud Client implements communication with cloud providers
-- Interfaces: https://github.com/yutsareva/vm-scheduler/tree/main/libs/allocator
-
-### Agent
-- Launches on allocated instaces
-- Pulls assigned tasks
-- Launches tasks
-- Pushes tasks' states to scheduler
-
-### Failure Detector
-- Monitors state of launched tasks, allocated instances
-- Finds failed tasks / failed instances
-
-### DockerHub
-- Stores docker images
-
-### Task Registry
-- Server base
-
-## API (TBD refine)
-### Server API for users
-- Register client profile (provides credentials to allocate instances from their cloud account)
-- Register task types (docker images)
-- Register VM-spaces
-- Launch task
-- Get status of task
-- Get state/result of task
-- Get stats
-- Get profile info/stats
-### Server API for agents running on allocated instances (TBD)
-
-
-## Code (-design/-style) rules
-- Clean architecture - any usage of db/storage/another service should be an interface
-- No exceptions are expected to be catched from library calls, Result<error, value> should be used
--->
+System architecture, scenario description and implementation details are described in [architecture.md](docs/architecture.md).
