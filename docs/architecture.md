@@ -1,7 +1,5 @@
 ## VM Scheduler architecture
 
-TBD: refine th text
-
 There are three main components in the system:
 - the scheduler service 
 - the core scheduler
